@@ -1,0 +1,14 @@
+#git
+**/*.aux
+**/*.bbl
+**/*.blg
+**/*.log
+**/*.mp
+**/*.out
+**/*.synctex.gz
+**/*.top
+**/*.tui
+**/*.fls
+**/*.fdb_latexmk
+main.pdf
+main.toc
