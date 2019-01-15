@@ -1,0 +1,233 @@
+%!TEX root = ../main.tex
+
+\setcounter{tocdepth}{1}
+%\setcounter{secnumdepth}{2}
+
+%http://www.tug.org/mactex/fonts/LaTeX_Preamble-Font_Choices.html
+% Euler for math | Palatino for rm | Helvetica for ss | Courier for tt
+\renewcommand{\rmdefault}{ppl} % rm
+\linespread{1.05}        % Palatino needs more leading
+
+
+\newenvironment{module}[1][htb]
+  {\renewcommand{\algorithmcfname}{Specification}% Update algorithm name
+   \begin{algorithm}[#1]%
+  }{\end{algorithm}}
+
+%hack for urls
+\def\UrlBreaks{\do\/\do-\do\/\/}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+% \theoremstyle{  }
+
+\definecolor{darkred}{rgb}{0.5,0,0}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{darkblue}{rgb}{0,0,0.5}
+
+%\usepackage[maxnames=2]{biblatex}
+\lstset{frame=l,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  numbers=left,
+  firstnumber=1,
+  numberfirstline=true
+  showstringspaces=false,
+  xleftmargin=5pt,
+%   framexleftmargin=-1pt,
+  columns=flexible,
+  basicstyle={\scriptsize\ttfamily},
+  %numbers=none,
+  numberstyle=\tiny\color{black},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4,
+  %for scala
+  emph={%  
+    object, def, val, zip, window, trigger, evict%
+    },emphstyle={\color{blue}\textbf}%
+}%
+
+
+
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,%
+    do,else,extends,false,final,finally,%
+    for,if,implicit,import,match,mixin,%
+    new,null,object,override,package,%
+    private,protected,requires,return,sealed,%
+    super,this,throw,trait,true,try,%
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]"""
+}
+%%% optional fonts and color configuration
+\SetAlFnt{\sffamily}
+\renewcommand\ArgSty{\normalfont\sffamily}
+%\renewcommand\KwSty[1]{\textnormal{\textbf{\sffamily#1}}\unskip}
+\SetAlCapFnt{\normalfont\sffamily\large}
+\renewcommand\AlCapNameFnt{\sffamily\large}
+%where did the lines go?
+\SetAlgoLined
+\SetNlSty{texttt}{}{:}
+%-----
+\SetKwProg{Fn}{Fun}{}{}
+\SetKwProg{Hdl}{Upon}{}{}
+\newpage
+%tikz libraries
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{arrows}
+
+
+\newcommand*{\bterm}[1]{\textcolor{blue}{#1}}
+\newcommand*{\brterm}[1]{\textcolor{black}{#1}}
+\newcommand*{\rterm}[1]{\textcolor{red}{#1}}
+\newcommand*{\gterm}[1]{\textcolor{brown}{#1}}
+
+%style macros
+\newcommand{\para}[1]{\vspace{2mm}\noindent\textbf{#1}}
+\newcommand{\parax}[1]{\noindent\textbf{#1}}
+\newcommand{\name}[1]{\textsf{\small #1}}
+
+%math
+\newcommand{\CONTRAD}{\Rightarrow\!\Leftarrow}
+\newcommand*{\EVT}[1]{\langle {#1} \rangle}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SWITCH TODOS ON/OFF HERE %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newboolean{commentSwitch}
+\setboolean{commentSwitch}{true}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ifthenelse{\boolean{commentSwitch}}{
+  \newcommand{\TODO}[1]{\textcolor{red}{TODO: #1}}
+  \newcommand{\TODOP}[1]{\textcolor{red}{TODO: #1}}
+  \newcommand{\TODOX}[1]{\textcolor{red}{TODO: #1}}
+  \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{NOTE}: #1}}
+  \newcommand{\DONEX}[1]{\textcolor{blue}{#1}}
+}{
+  \newcommand{\TODO}[1]{}
+  \newcommand{\NOTE}[1]{}
+}
+
+%math stuff
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{lemma}[theorem]{Lemma}
+
+
+\patchcmd{\abstract}{\titlepage}{\thispagestyle{empty}}{}{}
+\patchcmd{\endabstract}{\endtitlepage}{\clearpage}{}{}
+\newenvironment{poliabstract}[1]
+{\renewcommand{\abstractname}{#1}\begin{abstract}}
+  {\end{abstract}}
+
+\input{./tex/bib}
+
+\graphicspath{{./figures/}}
+
+
+
+%======================================
+% TITLE, CHAPTER, AND SECTION HEADINGS
+% by Gabriel
+%======================================
+
+\makeatletter
+\apptocmd{\@titleFont}{\sffamily}{}{}
+\apptocmd{\@frontMatterChapFont}{\sffamily}{}{}
+\makeatother
+
+\maxsecnumdepth{subsubsection}
+
+\setlength{\midchapskip}{50pt}
+\renewcommand*{\chapterheadstart}{%
+  % Remove all space above chapter heading
+}
+\renewcommand*{\chapnamefont}{%
+  \sffamily\large\scshape%
+}
+\renewcommand*{\chapnumfont}{%
+  \normalfont\fontsize{80}{64}\selectfont%
+}
+\renewcommand*{\printchaptername}{%
+  % Do not print 'Chapter' or 'Appendix'
+}
+\makeatletter
+\renewcommand*{\printchapternum}{%
+  \flushright%
+  \begin{tabular}{@{}c@{}}
+    \chapnamefont\MakeLowercase{\@chapapp}\\[.5ex]
+    \chapnumfont\thechapter%
+  \end{tabular}%
+}
+\renewcommand*{\printchaptertitle}[1]{%
+  \flushleft\chaptitlefont#1%
+}
+\renewcommand*{\chaptitlefont}{%
+  \sffamily\Huge\bfseries%
+}
+\setsecheadstyle{\sffamily\Large\bfseries}
+\setsubsecheadstyle{\sffamily\large\bfseries}
+\setsubsubsecheadstyle{\sffamily\bfseries}
+\setparaheadstyle{\sffamily\bfseries}
+
+% Customize typesetting of page headers and footers
+\newcommand{\hfMarkText}[1]{%
+  \footnotesize\textosf{\textsc{\MakeLowercase{#1}}}%
+}
+\nouppercaseheads
+\makeevenhead{headings}%
+             {\hfMarkText{\thepage}}%
+             {}%
+             {\hfMarkText{\leftmark}}
+\makeoddhead{headings}%
+            {\hfMarkText{\rightmark}}%
+            {}%
+            {\hfMarkText{\thepage}}
+\makeoddfoot{plain}%
+            {}%
+            {\hfMarkText{\thepage}}%
+            {}
+\makeatletter
+\renewcommand{\@hfMarkText}[1]{\hfMarkText{#1}}
+\makeatother
+
+% Remove chapter section numbers from header marks
+\addtopsmarks{headings}{}{
+  \createmark{chapter}{left}{shownumber}{}{ \ }
+}
+\addtopsmarks{headings}{}{
+  \createmark{section}{right}{shownumber}{}{ \ }
+}
+
+% Activate changes
+\pagestyle{headings}
+
+% Make new pagestyle where chapter (and no section) appears on both pages
+\copypagestyle{headings-chap-only}{headings}
+\addtopsmarks{headings-chap-only}{}{
+  \createmark{chapter}{both}{shownumber}{}{ \ }
+}
+
+
+
+% \raggedbottom
