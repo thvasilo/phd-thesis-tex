@@ -3,6 +3,9 @@
 **/*.bbl
 **/*.blg
 **/*.log
+**/*.loa
+**/*.lof
+**/*.lot
 **/*.mp
 **/*.out
 **/*.synctex.gz
@@ -12,3 +15,4 @@
 **/*.fdb_latexmk
 main.pdf
 main.toc
+templates/
