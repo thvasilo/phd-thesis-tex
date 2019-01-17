@@ -108,24 +108,26 @@
 \newcommand{\CONTRAD}{\Rightarrow\!\Leftarrow}
 \newcommand*{\EVT}[1]{\langle {#1} \rangle}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% SWITCH TODOS ON/OFF HERE %%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newboolean{commentSwitch}
-\setboolean{commentSwitch}{true}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\ifthenelse{\boolean{commentSwitch}}{
-  \newcommand{\TODO}[1]{\textcolor{red}{TODO: #1}}
-  \newcommand{\TODOP}[1]{\textcolor{red}{TODO: #1}}
-  \newcommand{\TODOX}[1]{\textcolor{red}{TODO: #1}}
-  \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{NOTE}: #1}}
-  \newcommand{\DONEX}[1]{\textcolor{blue}{#1}}
-}{
-  \newcommand{\TODO}[1]{}
-  \newcommand{\NOTE}[1]{}
-}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SWITCH TODOS ON/OFF HERE %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\newboolean{commentSwitch}
+%\setboolean{commentSwitch}{true}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%\ifthenelse{\boolean{commentSwitch}}{
+%  \newcommand{\TODO}[1]{\textcolor{red}{TODO: #1}}
+%  \newcommand{\TODOP}[1]{\textcolor{red}{TODO: #1}}
+%  \newcommand{\TODOX}[1]{\textcolor{red}{TODO: #1}}
+%  \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{NOTE}: #1}}
+%  \newcommand{\DONEX}[1]{\textcolor{blue}{#1}}
+%}{
+%  \newcommand{\TODO}[1]{}
+%  \newcommand{\NOTE}[1]{}
+%}
+% Margin width for todo notes
+\setlength{\marginparwidth}{1.7cm}
 
 %math stuff
 \newtheorem{theorem}{Theorem}[section]
