@@ -1,31 +1,56 @@
 \chapter{Scalable Graph Similarity}
 
 In this chapter we provide a summary of our work on scalable graph similarity calculation.
-This work stems from the general problem of determining the similarity between \emph{objects}
+We describe the problem and some related work in Section \ref{sec:concepts-background}
+and describe our approach in Section \ref{sec:concepts-main-findings}. As part of our
+results review we present an experiment that was not part of the original work, that
+bridges deep learning with out work to extract visual concepts from images.
+
+
+\section{Background}
+
+\label{sec:concepts-background}
+
+This work tackles the general problem of determining the similarity between \emph{objects}
 in a data set, which can take many forms: cosine similarity between
 items embedded in a low-dimensional representation \cite{word2vec}, ...
 \todo{A second thing here}, or as done
 in this work, by modeling the problem as graph similarity calculation.
-The use of the generic object term here is intentional, as our method is domain-agnostic
+The use of the generic \emph{object} term here is intentional, as our method is domain-agnostic
 and can be applied in a variety of domains where a meaningful measure of correlation
 between objects can be derived. In the paper we present examples from the linguistic,
-music, and molecular biology domains.
+music, and molecular biology domains, and we provide an additional example in this thesis
+using images as input, in Section \ref{sec:concepts-openimages}.
+
 In our approach we model the objects as nodes in graph and their interactions as edges,
 weighted by a measure of correlation between the objects. In language for example, the
 nodes would be words and the edges could be weighted by their mutual information \cite{mutual-information-nlp}.
-We then compute the similarities between nodes by applying a transformation on this \emph{correlation graph}, to produce a graph which surfaces deeper,
-semantic interactions which we term the \emph{similarity graph}.
-In order to determine the similarity between objects in graph, we examine
-their agreement in correlations to other objects: if two nodes are highly
-correlated to similar sets of nodes, they are more likely to be similar themselves.
 
 However, the computation of all-to-all similarities in a graph can quickly become
-intractable for large graphs. The popular SimRank \cite{simrank} algorithm developed by 
+intractable for large graphs. The popular SimRank \cite{simrank} algorithm developed by
 Jen and Widom for this purpose
 has a cubic time complexity with respect to the number of nodes in the graph.
 Clearly then for large-scale graphs some form of approximation needs to be used
 to make the computation feasible.
 
+
+\section{Method}
+
+We deal with the scalability problem by using a two-step process to calculate similarities.
+We first create a \emph{correlation graph} that models the surface correlations between objects.
+These correlations are easy to extract and do not necessarily hold semantic information.
+For example,
+given a corpus of text we can use a
+co-occurence measure, like mutual information, between any two pairs of
+words and use that as the edge weight between the two in the correlation graph.
+We then compute the similarities between nodes by applying a transformation on this graph, to produce a graph which surfaces deeper,
+semantic interactions which we term the \emph{similarity graph}.
+In order to determine the similarity between objects in graph, we examine
+their agreement in correlations to other objects: if two nodes are highly
+correlated to similar sets of nodes, they are more likely to be similar themselves.
+
+However, computing these all-to-all similarities can be challenging for massive
+correlation graphs.
 As in other works in this thesis, we apply a combination of using approximations to limit
 the computational cost of the method, and develop a distributed algorithm that allows
 us to scale-out learning and take advantage of modern computing clusters.
@@ -47,41 +72,71 @@ In order to compute for each pair of nodes in a neighborhood their common sets o
 we need only examine the common sets of incoming edges per node. By distributing our graph
 using the id of the incoming nodes as a key we can perform this computation using a
 self-join operation, which involves no communication of data in the cluster. As a result
-we are able to scale the computation to massive datasets, as we show with our use of the
+we are able to scale the computation to massive datasets, as we demonstrate with our use of the
 Google Books n-gram dataset, which corresponds to approximate 4\% of all the books ever
 printed \cite{ngrams} (24.5 billion rows).
 
-
-
-\section{Background} \todo{Compare to similarity learning methods}
-
-In this section we will provide the necessary background knowledge that places our
-work in the context of the wider research on similarity calculation.
-
-\subsection{Using context as a measure of similarity}
+Once we have built the similarity graph, we can go one step further in order to extract
+groups of inter-similar objects that we call \emph{concepts}. These correspond to groups
+of objects that belong to the same semantic group, based on their appearances in the context
+of other objects. In the language example these could be words that describe the same
+concept such as ``cities'', or words with the same syntactic and semantic purpose, like
+groups of adverbs. To create these groups we apply a community detection method on top
+of the similarity graph. Because the similarity graph itself can be large, we develop
+a scalable approach which is based on the speaker-listener label propagation algorithm
+(SLPA) \cite{slpa}. \todo{Do we explain community detection and label propagation here?}
 
 \section{Main Findings}
 
-\subsection{Method}
+\label{sec:concepts-main-findings}
 
-\subsubsection*{Definitions}
+In the paper we provide examples of the output produced by the algorithm, and
+perform an evaluation of the similarities produced using a gold standard dataset,
+WordSim-353~\cite{wordsim}. Here we provide a summary of some of the experiments
+presented in the paper, and a new set of results using images as input.
 
+\subsection{Billion words corpus}
 
-\subsubsection*{Similarity formula with example}
+In the paper we perform an evaluation on the Billion word corpus~\cite{billion-word}
+which contains approximately one billion tokens and was scraped from online news
+sources. We create the correlation graph by using the relative co-occurrence frequency
+of word pairs, that is the (directed) correlation between the words $i$ and $j$, $\rho_{i, j}$,
+will be $c_{i,j}/c_i$ where $c_{i,j}$ the number of times the words co-occur within
+a window, and $c_i$ the frequency of word $i$ in the corpus. For this experiment we
+select a window size of two, meaning we only take into account bigrams.
+We can some example concepts uncovered by the algorithm in Figure \ref{fig:concepts-billion}.
 
-\subsubsection*{Concept Discover through community detection}
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{billion-words-example}
+	\caption{Example concepts extracted from the Billion word corpus}
+	\label{fig:concepts-billion}
+\end{figure}
 
-\subsubsection{Results}
+\subsection{Music}
 
-In this section we provide a summary of the results presented in the paper,
-and present previously unpublished results that bridge deep learning
-with our methods to allow for end-to-end concept discovery from raw images.
+We also perform experiments on a music listening dataset created by Celma from
+the Last.fm music service~\cite{celma-long-tail}. The dataset contains 19 million
+track play from 992 users, which we use to create a correlation graph between
+artists. The correlation measure $\rho_{i, j}$ is the number of times artist $i$ was followed
+by artist $j$, divided by the total number of plays for artist $i$. Some example
+artist concepts which correspond to the music genres can be seen in Figure
+\ref{fig:concepts-artists}.
 
-\subsubsection*{Visual concepts through the combination of Deep Learning and graphs}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{artist-example}
+	\caption{Example concepts extracted from the music listening dataset.}
+	\label{fig:concepts-artists}
+\end{figure}
+
+\subsection{Visual concepts through the combination of Deep Learning and graphs}
+
+\label{sec:concepts-openimages}
 
 In this experiment we make use of a combination of deep neural networks and our
 algorithm to uncover visual concepts from raw images. Deep neural networks
-can be trained on massive datasets of images to recognize multiple objects
+can be trained on labeled datasets of images to recognize multiple objects
 in an image \cite{deep-learning}. The networks' accuracy creates a unique opportunity
 to generate visual concepts out of raw images: A network trained on labeled dataset
 like ImageNet \cite{imagenet} can be used to generate labels from unlabeled raw images thus generating
@@ -103,7 +158,7 @@ label, creating a second degree link between the \emph{horse} and \emph{guitar} 
 By incorporating all such images, our correlation graph will have a representation of objects
 that tend to appear together in the real world. Using this graph as input, we can apply our similarity
 transformation to group together objects that belong to semantically similar classes
-based on the similarity between the contexts in which they appear in, in the real world. 
+based on the similarity between the contexts in which they appear in, in the real world.
 Finally we can apply our community detection algorithm to group together items to form
 visual concepts in the similarity graph.
 
@@ -166,3 +221,24 @@ images that exist in services like Flickr to create visual concepts.
 		Figure \ref{fig:openimages-concepts}.}
 	\label{fig:openimage-zoom}
 \end{figure}
+
+\subsection{Word similarity evaluation}
+
+To provide a quantitative evaluation of the method we made use of the WordSim-353 (WS-353)
+dataset. This dataset includes 353 word pairs that are rated by humans for their
+similarity. This dataset includes unrelated words which presents a problem for
+approach that by design does not calculate similarities for words that are unrelated,
+as using the graph structure is one of the main ways we can make the computation
+scale. For that reason we use the word pairs that appear both in the evaluation
+dataset \textit{and} exist in our similarity graph. We use the Google n-grams
+data with a corpus of 361 billion tokes, which in under 10 minutes produces
+a similarity graph that contains 60\% of the word pairs present in WS-353.
+
+The produced similarities have a Spearman rank correlation of 0.76, which
+is exactly what the inter-annotator agreement is for this dataset.
+Finally we compare the WS-353 and our produced similarities with the
+cosine similarities of the GloVe~\cite{glove} embedding vectors,
+which was at the time of publication the state of the art embedding
+method. We train our method on a smaller corpus and smaller window than
+the GloVe vectors, but are still able to generate similarities comparable
+to GloVe (0.71 Spearman rank correlation)
