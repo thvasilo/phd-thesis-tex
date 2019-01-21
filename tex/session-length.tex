@@ -1,1 +1,191 @@
-\chapter{Session Length Prediction using Gradient Boosted Trees}
+\chapter{Session Length Prediction using Gradient Boosted Trees}\todo{Whole chapter needs fixing, sloppy and too much copying.}
+
+In this chapter we provide an overview of our work on session length
+prediction for media streaming using gradient boosted trees. After giving
+an introduction to the problem and related work in Section \ref{sec:session-length-background},
+we describe the methods we used to analyze the data and make predictions in
+Section \ref{sec:session-length-method} and summarize our findings in Section
+\ref{sec:session-length-main-findings}.
+
+\section{Background}
+\label{sec:session-length-background}
+
+As streaming services have proliferated it's become important for streaming
+companies to analyze their users' behavior to optimize their offering and
+meet business. One important factor in user satisfaction is the length of
+a user's sessions~\cite{dwell-time-satisfaction}, which we define as the
+the complete interaction of a
+user starting up the service, consuming a number of items, and ending
+their interaction after some elapsed time.
+
+This kind of interaction has been studied in the web search \cite{dwell-time-satisfaction, search-time-model} and ad click \cite{post-click-ads, post-click-survival}
+domains, but no study had investigate the media streaming domain before.
+
+Streaming services can use the length of user session to optimize their
+recommendations, for example providing exploratory and more ``risky'' recommendations
+for long session, versus exploitation and more ``safe'' recommendations for short sessions.
+In ad-supported services, having an indication of the session length can also help
+with scheduling ads, allowing the provider to hit their revenue target, while
+minimizing the annoyance to the user~\cite{annoying-ads}.
+
+Predicting the length of user sessions in a mobile streaming service can be challenging,
+because user interaction lengths
+typically exhibit long-tail distributions \cite{post-click-survival, weibull-web-browsing, phonecalls}, and the number of external factors that can influence the length of the
+session can be hard to model, like users commuting, taking phone calls, or connectivity
+issues. Media streaming sessions also differ from dwell time after ad clicks
+and web search. In music specifically, which is the domain we are examining,
+users typically consume multiple items in one session and have different behaviors
+depending on the type of session as we show in our results (Section \ref{sec:session-length-main-findings}).
+
+In our paper we provide an analysis the session length distribution using
+tools from survival analysis and use gradient boosted trees with specialized
+loss functions to place the probability mass correctly.
+
+\section{Method}
+\label{sec:session-length-method}
+
+In this section we describe the methods we have used to analyze the data
+and create a predictive model for session length.
+
+\subsection{Weibull Analysis of Session Length}
+
+To analyze the user length behavior of the users we use tools from survival analysis~\cite{survival-analysis}, and specifically the Weibull distribution
+\cite{weibull-survival}. The Weibull distribution is a flexible parametric distribution,
+commonly used in survival analysis because it allows to model different kinds of failure
+rates, where the probability of a unit failing changes over time. Its probability
+density function is:
+
+\begin{equation}
+\label{eq:weibull-pdf}
+f(t) = \frac{k}{\lambda}\left( \frac{t}{\lambda}\right)^{k-1}e^{-(t/\lambda)^k}, t \geq 0
+\end{equation}
+
+
+
+that provides two parameters: the shape $k$ and the scale $\lambda$. The shape $k$ determines
+the evolution of the failure rate over time, while the scale, $\lambda$, determines the spread
+of the distribution. The effect of $k$ is best shown through an illustration of the hazard rate
+for the Weibull function, that gives us the failure rate for an item that has survived until time
+$t$:
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.7\textwidth]{weibull-hazard}
+	\caption{The failure rate of the Weibull distribution for different values of the shape parameter, $k$. We set $\lambda = 1$.}
+	\label{fig:weibull-failure-rate}
+\end{figure}
+
+The failure rate increases with time for $k > 1.0$, which is called the ``positive-aging''
+effect, and decreases with time for $k < 1.0$ an effect called ``negative-aging''. Positive aging
+is what we commonly associate with web sessions and is indeed observed in 98.5\% of post-click
+behavior\cite{weibull-web-browsing}: as time goes on users become more likely to quit the session
+at any point. On the other hand, negative aging means that sessions become less likely to end
+as time goes on. This behavior is also described as ``infant mortality'' where defective units
+may fail early on, but as time goes on they become less likely to fail.
+For $k = 1$ the failure rate is constant and the distribution becomes equivalent to the
+exponential distribution.
+
+\subsection{Prediction}
+
+On the prediction side, in order to tackle the issue of the long-tail distribution
+of the sessions and to extract as much power as possible from the predictive features,
+we choose the gradient boosted tree (GBT) algorithm. GBTs allow us to customize the
+loss function to better fit the long-tail distribution of the dependent, and are flexible
+enough to discover patterns in the large data we have available.
+
+We extracted a set of features for each user, like their gender, age, subscription
+status (pair or free user), and a set of contextual features each session,
+like the device type the session is on, the type of network (mobile, WiFi), or
+the duration of the last session.
+
+Using these features we train a Gradient Boosted Tree model. We choose this model
+because it allows for native handling of missing data which are present in our
+data, a common issue in industrial datasets, and for its flexibility in terms of
+loss function.
+
+Our data are non-negative and long-tail distributed. One common solution in
+these cases is to log-transform the dependent and then fit using a squared
+loss, but we often want to use a loss function that is better suited to the
+objective. To that end we try fitting both on the log-transformed data with
+a mean squared error objective, as well as fitting on a log-likelihood
+objective of a Gamma function with a log link function, which can explicitly
+model non-negative data with a positive skew. We also test two versions
+of each model: One where all data are aggregated and we build a single model,
+and one where we build a personalized model for each user.
+
+
+\section{Main Findings}
+\label{sec:session-length-main-findings}
+
+\subsection{User session distribution characteristics}
+
+We use a dataset of user interaction from the Pandora music streaming service, which
+is a major US-based music streaming service, and mainly ad supported. We define
+sessions as periods of listening activity that are demarcated by breaks or pauses of
+30 minutes or more.
+We gather data from a random subset users for the months of February to April 2016,
+resulting in 4,030,755 sessions. We plot the normalized duration data in Figure
+\ref{fig:session-length-times}.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\textwidth]{duration-hist}
+	\caption{Histogram plot of session length. The x-axis has been normalized to the 1-1000 range.}
+	\label{fig:session-length-times}
+\end{figure}
+
+We analyze the session length distribution by fitting a Weibull distribution
+to each user's data, and plot the resulting Empirical Cumulative Distribution
+Function for the shape parameter in Figure \ref{fig:session-length-shapes}.
+We can see that unlike the web site visits after a search, that had a negative aging
+effect ($k < 1$) for 98.5\% of the users, only 44\% of the users exhibit the
+this behavior for music streaming. The behavior of the users is then split
+roughly down the middle, with some users having sessions that become more likely
+to end as time goes on, and others whose sessions become less likely to end as
+they grow longer.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\textwidth]{weibull_shape_ecdf}
+	\caption{The empirical cumulative distribution for the shape parameter per user.
+		The x axis has been truncated at $x=4$ for readability (~99.5 \% of data points shown).}
+	\label{fig:session-length-shapes}
+\end{figure}
+
+\subsection{Predictive model performance}
+
+In our analysis of the performance of the predictive model we use two metrics:
+First, we use the normalized Root Mean Squared Error which is a common choice
+for regression problems, and the normalized mean absolute error, a metric that is robust to outliers, to account
+for the long-tail distribution of the dependent. For a baseline predictor we use the mean
+session length, a heuristic that is simple, but personalized.
+We present the results in Table
+\ref{tab:session-length-prediction}.
+
+
+\begin{table}
+	\centering
+	\caption{Performance metrics for length prediction task. We report the
+		mean value across the 10 CV folds, and the standard deviation in parentheses.}
+	\label{tab:session-length-prediction}
+	\begin{tabular}{lll}
+		\toprule
+		Method (\textit{Objective}) & Normalized MAE & nRMSE \\
+		\midrule
+		Baseline & 1 \textit{(0.001)} & 1.16 \textit{(0.005)} \\
+		Aggregated (\textit{MSE}) & \textbf{0.71} \textit{(0.008)} & 1.23 \textit{(0.008)} \\
+		Aggregated (\textit{Gamma}) & 0.93 \textit{(0.007)} & \textbf{1.10} \textit{(0.005)} \\
+		Per-user (\textit{MSE}) & 0.83 \textit{(0.002)} & 1.29 \textit{(0.004)} \\
+		Per-user (\textit{Gamma}) & 0.86 \textit{(0.001)} & 1.31 \textit{(0.003)} \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+From the results we can see that the aggregated models perform better overall,
+something that can be explained by the fact that the per-user models are trained
+on a few data points for most users, leading to over-fitting. The models using the
+MSE objective place most of their probability mass closer to the origin and as a
+result perform better in terms of MAE, but miss many of the longer sessions
+and as a result perform worse in terms of RMSE.
