@@ -1,1 +1,187 @@
 \chapter{Uncertainty Estimation for Online Decision Trees}
+
+In this chapter we present our work on estimating the uncertainty
+in the predictions of online decision trees. We define the problem
+and present some related work in Section \ref{sec:uncertain-trees-background},
+describe the two algorithms developed for this purpose in Section
+\ref{sec:uncertain-trees-method} and present our empirical evaluation
+results in Section \ref{sec:uncertain-trees-results}.
+
+\section{Background}
+\label{sec:uncertain-trees-background}
+
+As machine learning methods mature and become increasingly popular, they are more
+often being deployed in critical scenarios were mistakes can be costly. Such
+domains include autonomous vehicles, and the medical and financial sector.
+In order for critical decision-making to be done by learning algorithms in these areas, we need
+to have a notion uncertainty in the algorithms' predictions.
+Some of these critical domains also include the requirement that critical decisions
+be made in real-time in a constantly evolving environment, and under a tight computational budget. Examples include the financial domain \cite{streaming-finance} and autonomous vehicles \cite{av-safety}.
+
+These examples demonstrate the need for highly accurate algorithms that be trained
+online, adapt to an evolving environment, and quantify the uncertainty in their
+predictions. Most of the online learning methods available today do not offer
+quantification in their predictions, while most methods that provide uncertainty
+estimate are designed for the batch domain where the data are static and bounded.
+In this work we aim to provide highly accurate algorithms that can be trained
+online, on a sequentially arriving and potentially unbounded dataset, that also
+provide uncertainty estimates for their predictions.
+
+We develop two algorithms, one based on conformal prediction~\cite{vovk2005algorithmic} and one based on quantile
+regression forests~\cite{meinshausen2006quantile}. The two algorithms are general random forest learners that
+enable high accuracy \cite{hundreds-classifiers}, are computationally bounded
+and adapt to concept drift through the use of online base learners \cite{fimt},
+and provide uncertainty estimates at an accuracy level equal to or better
+than the state of the art \cite{mondrian-forests-original}, while being an order of magnitude faster to run.
+
+\section{Method}
+\label{sec:uncertain-trees-method}
+
+In this section we provide an overview of the methods developed for this work.
+We provide a brief description of the batch algorithms that we base our algorithms
+on, and proceed to explain how we make use of approximations to transfer them to
+the online domain. We deal with the regression task, and our task is to develop algorithms
+that exhibit what is called \emph{conservative validity} in CP literature. This refers
+to algorithms that produce interval such that the probability of the true value not
+being part of the interval is \emph{less than or equal to} $\alpha$, which is referred
+to as the \emph{significance level}. This task is different from quantile regression \cite{koenker2005qr}
+where the objective is the error level to be \emph{exactly} $\alpha$.
+
+\subsection{Inductive Conformal Prediction}
+
+Conformal prediction (CP) is a meta-algorithm that can add the ability to
+produce prediction regions, that is sets of classes for classification or
+intervals for regression, to any point-prediction algorithm. It works by
+quantifying how surprising or \emph{non-conforming} an instance is compared
+to what the learner has observed and producing a region that is guaranteed
+to contain the true value at a requested degree of certainty. CP is rigorously
+proven to be \textit{valid}~\cite{vovk2005algorithmic}, that is, the probability of error is bounded
+by a pre-selected \emph{significance level}.
+
+While CP was originally proposed as an online learning framework, its computational
+requirements made it impractical for large scale data, as it required to re-train
+the model from scratch with the complete dataset for each incoming example.
+\citet{papadopoulos2002icp} proposed \emph{Inductive Conformal Prediction} (ICP) as
+a way to bound the computational cost of the method in the batch setting.
+Instead of constantly re-training the learner, it sets aside a subset
+of the training examples referred to as the \emph{calibration set},
+and uses this to determine the non-conformity scores of the examples
+and determine the intervals.
+
+However, ICP is an offline method designed for the batch setting and assumes that the complete
+dataset is available at training, time in addition to requiring a external
+validation set to use as the calibration set.
+
+
+\subsection{Quantile Regression Forests}
+
+Quantile Regression Forests (QRF) \cite{meinshausen2006quantile} are an extension to
+the random forest \cite{random-forests} algorithm that enables estimation
+of the full conditional cumulative distribution function (CDF) instead of only
+the conditional mean. Using the conditional CDF we can estimate prediction
+intervals for a given significance level by computing the quantiles at the
+edges of that interval. For example, for a significance level of 0.1,
+we can take the 0.05 and 0.95 conditional CDF values to produce the interval.
+
+QRF works by maintaining at the leafs not just the mean label value of all
+the data points that get routed to that leaf, but maintaining a mapping
+from every instance to its label in its leafs. Otherwise, it grows trees
+like a regular random forest model. QRF uses a weighted sum of all the label
+value to determine the CDF estimates.
+
+However because QRF requires access to the complete dataset and needs to maintain
+a mapping from each instance to its label value, it can cannot be used in an online
+setting where instances arrive in sequence, and memory is bounded.
+
+\subsection{Conformal Prediction with Online Regression Forests}
+
+Our algorithm adapts ICP to the online setting by using online tree learners
+to always maintain an up-to-date model, and uses a bounded FIFO queue of instances
+as it's calibration set to keep the memory requirements of the algorithm bounded. We make use of
+out-of-bag examples from the bagging process in order to remove the need
+for a separate calibration set, as done in \cite{rf-cp-oob}. We make use of
+the online bagging algorithm by \citet{Oza2001online} and the online
+regression trees by \citet{fimt} to develop online regression forests
+that produce confidence intervals.
+
+The algorithm works by maintaining a bounded FIFO queue of examples
+that are used as the calibration set for the CP algorithm. This set
+gets populated whenever an example is out-of-bag for at least one
+tree in the ensemble. In the online bagging algorithm we are using,
+a draw from a Poisson distribution is made for a each incoming instance,
+for each learner in the ensemble. If the drawn sample is not larger
+than zero, that example is out-of-bag for the learner and we add it
+to the calibration set. We maintain a sorted list of predictions for the
+examples that are out-of-bag which give us the \emph{non-conformity}
+scores for the set.
+
+At prediction time, we use these non-conformity scores to produce the
+intervals: After a regular ensemble prediction is made for the incoming
+instance, we determine the interval boundaries by moving through the
+sorted list of non-conformity scores, and pick the value
+$\phi = \calSet[\floor*{(1 - \significance) \cdot c}$ to be half the
+length of the interval, where $\calSet$ the sorted set of non-conformity scores
+and \significance the requested significance level.
+We call this meta-algorithm CPExact.
+
+\subsubsection*{Approximations}
+
+The map of predictors to out-of-bag predictions needs to be up-to-date with
+the latest version of the predictors. That is, whenever an online learner
+is modified, we need to update all its predictions in the calibration set.
+In the worst case it is possible that we will need to make $|\calSet| \cdot |L|$
+predictions for a single incoming instance, where $L$ is the set of learners.
+For a calibration set with 1,000 instances and 100 trees this can quickly
+become computationally intractable. For this purpose we propose an approximate
+version of the algorithm that only updates the predictions of the new
+data points that have enter the calibration set since the last prediction.
+This allows for significant computation savings, while still providing
+an up to date representation of the data points' non-conformity, by constantly
+adding new instances to the set and removing older ones. We call this
+meta-algorithm CPApproximate.
+
+\subsection{Online Quantile Regression Forests}
+
+The batch QRF algorithm cannot be applied to the online setting as it requires
+a mapping from the the complete set of instances to their labels to be stored
+in memory at the leafs. The main idea for our algorithm is to use an approximate data
+structure to store a sketch of the labels cumulative distribution at each leaf,
+making it possible to estimate the quantiles from them.
+
+To that end we use the state-of-the-art KLL quantile sketch \cite{karnin2016kll},
+that gives a memory and computation-efficient way to approximate the CDF from
+a stream of data. An important characteristic of the KLL sketch is that it is
+\emph{mergeable}, that is we can apply the sketch to different partitions of
+a stream, and subsequently merge them, and the result should be the same
+as if we had applied the sketch to the complete stream. We use this property
+to make the predictions in our ensemble.
+
+We maintain  one of these sketches at every leaf in the trees of the ensemble.
+For every incoming instance that gets filtered to a leaf, we update its sketch
+with the label, thereby maintaining an up-to-date sketch of the CDF for every
+leaf. At prediction time, we drop the instance
+down every tree in the ensemble, and retrieve every sketch.
+We can then merge those sketches together to extract the overall estimate
+of the CDF for the ensemble.
+
+\section{Main Findings}
+\label{sec:uncertain-trees-results}
+
+We evaluate our algorithms against a simple baseline and a state of the art
+algorithm, Mondrian Forests \cite{mondrian-forests-original}. We use 20 small-scale
+datasets gathered from the OpenML repository \cite{vanschoren2013openml}, as well
+as 10 large scale datasets that exhibit concept drift.
+
+Evaluating interval prediction algorithms entails two aspects: The error rate
+and the width of the intervals. The algorithms should maintain an error rate
+that is below the significance level set by the user. However, this can be
+easily achieved by producing very wide intervals that are however uninformative.
+For this reason we need to take into account the width of  the intervals when
+evaluating the algorithms. In this work we use two different metrics that
+combine both aspects: the quantile loss \cite{koenker2005qr} and a metric
+called Utility,
+based on the time-utility functions used in real-time systems \cite{tuf2005}.
+Unlike quantile loss, utility will only penalize methods that go above
+the requested error rate, and as such is a better fit for our task.
+
+\todo{Describe results, or change structure??}
