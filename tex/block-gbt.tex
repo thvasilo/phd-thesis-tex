@@ -1,1 +1,151 @@
 \chapter{Block-distributed Gradient Boosted Trees}
+
+In this section we will summarize our work on block-distributed
+gradient boosted trees. We set up the motivation for the work
+and related research in Section \ref{sec:block-gbt-background}.
+we describe the algorithms we developed in Section \ref{sec:block-gbt-method},
+and present our experimental evaluation in Section \ref{sec:block-gbt-results}.
+
+\section{Background}
+\label{sec:block-gbt-background}
+
+Gradient Boosted Trees (GBT) have risen as one of the most popular algorithms for
+tasks like Click-Through Rate prediction \cite{ctr-facebook}, learning-to-rank \cite{mcrank} and have been
+successfully applied in multiple domains, becoming the dominant
+algorithm used in data-mining competitions~\cite{xgboost}.
+The success of GBTs has been driven to a large degree by their
+accuracy and scalability: GBTs are fast to train and can handle massive datasets
+through distributed implementations \cite{xgboost, lightgbm}, while being
+highly accurate in variety of domains \cite{xgboost, hundreds-classifiers}.
+
+The popularity of GBTs has created a large interest
+in improving their scaling characteristics,
+both in terms of efficient implementations \cite{xgboost, lightgbm, dimboost},
+as well as specialized algorithms to improve their computation and communication
+costs \cite{comm-efficient-gbt, online-gradient-boosting}.
+
+All current distributed implementations of GBTs assume that the dataset is
+\emph{horizontally} distributed, that is, each worker has access to
+a subset of the data points with all their features included.
+This work aims to provide a new way to scale-out GBTs by allowing the training
+dataset to be distributed along \emph{both} the row and feature dimensions.
+
+This new way of distributing the data introduces new algorithmic challenges,
+as the points where the algorithm require communication increase, but also new opportunities
+for optimization through the use of a more flexible communication pattern.
+Specifically, while all existing methods use dense communication,
+we use sparse communication achieving orders of magnitude reduced communication
+cost for sparse data.
+
+\section{Method}
+\label{sec:block-gbt-method}
+
+\todo{Maybe we need a bit more intro about GBT, all-reduce \& PS, distributed GBT}
+
+The training process of GBTs can roughly be divided into three stages: First comes
+the prediction part, in which we use the existing ensemble to make a prediction
+for each point in the dataset. We use these predictions to get the gradient
+value for each data point. Second comes the gradient histogram creation.
+In this stage we use the computed gradients to create gradient histograms
+for every feature, one for each leaf in the tree. A gradient histogram
+for a feature contains in each bucket the sum of the gradients that corresponds to
+that feature range. Finally, given the gradient histograms for each feature,
+we have a final step of split selection, where we use these histograms to greedily
+select the optimal split for each leaf.
+
+\subsection{Block-distributed prediction}
+
+In the row-distributed setting, each worker has access to all the features for the
+horizontal slice of the data they are responsible for. This allows us them to determine
+the exit node for each local data point without any communication.
+That is not the case however
+for block-distributed data where each worker only has access to parts of each data
+point. In this case, when the model contains internal nodes that correspond to features
+that are not present in one worker, they will need to communicate with the other
+workers responsible for the same horizontal slice to determine the exit nodes.
+What we want to avoid in this scenario is shuffling the data between workers,
+as we could have millions of features leading to impractical communication
+costs. In our approach we develop a novel use of the Quickscorer \cite{quickscorer} algorithm
+that gives us provably correct and efficient block-distributed predictions.
+
+Briefly, in Quickscorer the exit node can be determined by applying the bit-wise
+\AND operation between specific bit-strings for every internal node.
+These bit-strings are of length $|L|$, where $L$ the set of leaves, and
+every zero indicates that a leaf node becomes impossible to reach if the node's
+condition evaluates to false, and all other elements are one. When determining
+the exit node for a particular example, we need to identify all the nodes in
+the tree that evaluate to false for that example, and aggregate their bit-strings into one overall
+bit-string \bitstring.
+\citet{quickscorer}
+prove that the left-most bit set to one in \bitstring will indicate the exit node for the example.
+
+We adapt the above algorithm to work in the block-distributed setting. Each worker
+now only has access to particular range of features for a subset of the data points.
+So it an only evaluate the conditions of the tree that correspond to its slice
+of the features. We create local bit-strings at each worker, one for each example.
+These bit-strings have the same properties as in the original Quikscorer algorithm,
+however can only eliminate leafs that are children of internal nodes that correspond
+to the features available at that worker. To fully determine the output for each
+data point, the workers that hold data for the same horizontal slice will need
+to aggregate the bit strings for each data point. We do this by utilizing the
+parameter server \cite{muPS} architecture\todo{Should have introduced the PS now, and
+esp. the server/worker concepts}: Each server is responsible for a
+one horizontal slice of the data. The workers that hold the different parts of
+a horizontal slice, all send their bit-strings to the same server.
+The server then aggregates the partial bit-strings using a simple bit-wise \AND to determine the exit
+node for each data point.
+
+Because the \AND operator is both commutative and associative, the order in which
+these aggregations happen does not affect the result, and the overall aggregation
+will be equal to the aggregation of the partial aggregations. This ensures that
+our predictions will be correct. By using this method we can determine the exit
+nodes for each data point, and from that the corresponding gradients that we need
+for the next step of histogram aggregation.
+
+\subsection{Histogram Aggregation}
+
+With centralized data the histogram aggregation step requires no communication,
+and can be performed by running a simple local aggregation.
+
+For example, assume that for a specific leaf we have two data points, $\{x_1, x_2\}$,
+and our dataset has two features $\{f_1, f_2\}$ each so that $x_1: \{0.1, 7\}$ and $x_2: \{1.5, 8\}$.
+Say the gradient values of the data points are $\{x_1: 3.5, x_2: 0.5\}$.
+The gradient histograms' buckets are determined by the empirical distribution of each
+feature across the complete dataset. In this example say we have the buckets:
+$f_1: \{[0.0, 1.0), [1.0, 5.0)\}$ and $f_2:\{ [0.0, 5.0), [5.0, 10.0)\}$.
+Then, for this leaf, the feature histogram for $f_1$ would be $\{3.5, 0.5\}$ and for $f_2$
+it would be $\{0.0, 3.5 + 0.5\}$, since both data points have values for $f_2$ that fall
+in the second bucket, $[5.0, 10.0)$, of the gradient histogram.
+
+Now assume that we have a distributed dataset, and that $x_1$ resided on worker $w_1$ and $x_2$ resided on worker $w_2$. This would
+be an example of the row-distributed pattern that all current distributed algorithms assume.
+In this case we would need to create at each worker local histograms, which
+in this case would be $f_1: \{3.5, 0.0\}$ and $f_2: \{0.0, 3.5\}$ for $w_1$, and $f_1: \{0.0, 0.5\}$ and $f_2: \{0.0, 0.5\}$ for $w_2$. To get a complete picture of the gradient histograms
+we need to aggregate them between the workers, so the algorithm involves one communication
+step. One drawback of all current row-distributed methods is that they use dense communication
+for the aggregation we just described. For the example given above, dense communication
+requires us to communicate $|F| \cdot B$ values for each worker, where $F$ the set of features,
+and $B$ the number of histogram buckets. However,
+many of the histogram values can be zero, as was the case for four out of the eight possible
+values in the example. This problem is exacerbated when we are dealing with sparse
+datasets with millions of features.
+
+Block-distribution introduces another level of complexity into this operation, as
+in that case, no worker has a complete view of any data point. Each worker gets one block,
+that is, a horizontal \emph{and} vertical slice of the data. If we think of the complete
+gradient histograms as a tensor of dimensions $|L| \times |F| \times B$, each worker is
+will populate a part of this tensor, across the $L$ and $B$ dimensions, but limited to a specific
+subset of $F$. We use a sparse representation of this tensor at each worker, which allows
+us to eliminate the extraneous communication described above. Our experiments show
+that for sparse datasets this brings down the communication cost by multiple orders
+of magnitude.
+
+Once each worker iterates
+through their block of data, they send their partial tensor to one server. Each server
+is now responsible for a range of features, so workers that belong to the same vertical
+slice of data will send their tensors to the same server. Each server ends up having
+a full view of the gradient histograms for a subset of features.
+
+
+\section{Main Findings}
+\label{sec:block-gbt-results}
