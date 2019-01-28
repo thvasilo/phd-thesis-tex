@@ -1,4 +1,4 @@
-\chapter{Uncertainty Estimation for Online Decision Trees}
+\label{ch:uncertain-trees}
 
 In this chapter we present our work on estimating the uncertainty
 in the predictions of online decision trees. We define the problem
@@ -176,12 +176,88 @@ Evaluating interval prediction algorithms entails two aspects: The error rate
 and the width of the intervals. The algorithms should maintain an error rate
 that is below the significance level set by the user. However, this can be
 easily achieved by producing very wide intervals that are however uninformative.
-For this reason we need to take into account the width of  the intervals when
-evaluating the algorithms. In this work we use two different metrics that
-combine both aspects: the quantile loss \cite{koenker2005qr} and a metric
-called Utility,
+For this reason we also need to take into account the width of  the intervals when
+evaluating the algorithms. We measure the actual error rate using Mean Error Rate (MER)
+which is the mean of the 0-1 loss of the algorithm, Relative Interval Size that
+is the normalized mean size of the intervals produced.
+
+To ease presentation we use two different metrics that
+combine both aspects: the quantile loss \cite{koenker2005qr} and Utility,
 based on the time-utility functions used in real-time systems \cite{tuf2005}.
-Unlike quantile loss, utility will only penalize methods that go above
+Unlike quantile loss, Utility will only penalize methods that go above
 the requested error rate, and as such is a better fit for our task.
 
-\todo{Describe results, or change structure??}
+We can see the results in terms of Utility for the small-scale data in Figure \ref{fig:utility-small-mid}
+and for the large-scale drifting datasets in Figure \ref{fig:utility-concept-drift}.
+We can see that our methods are able to outperform the Mondrian Forest baseline,
+while being computationally more efficient. The runtimes for each
+category of dataset are listed in Table \ref{tab:uncertain-runtimes}, where we
+can see that our algorithms are up to an order magnitude faster
+than Mondrian Forest.
+
+\begin{table}
+	\centering
+	\begin{tabular}{l r r r r}
+		\toprule
+		Dataset      & MF  & OnlineQRF & CPApprox & CPExact  \\
+		\midrule
+		Small-scale data & 41.6       & 5.4     & 5.7      & 102.3        \\
+		Flight delays   & 6340        & 836       & 899       & 27863        \\
+		Friedman     & 2380      & 114      & 213      & 2011            \\
+		\bottomrule
+	\end{tabular}
+	\caption{Average running times for all algorithms (seconds).}
+	\label{tab:uncertain-runtimes}
+\end{table}
+
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\columnwidth]{utility-small-mid}
+	\caption{Utility for the small-scale data. Higher is better.}
+	\label{fig:utility-small-mid}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\columnwidth]{utility-concept_drift}
+	\caption{Utility for the concept drift data. Higher is better.}
+	\label{fig:utility-concept-drift}
+\end{figure}
+
+We also provide an evaluation for different significance levels.
+Depending on the cost of a mistake we might require different levels of confidence
+in our predictions. Thereby it's important to measure the performance of the 
+algorithms over a range of different significance levels. The results are listed
+in Table \ref{tab:uncertain-significance} where we can see that Mondrian Forests cannot maintain the
+error guarantees above 90\% confidence, and that OnlineQRF provides the best
+compromise between maintaining the error below the requested level, while
+keeping the produced intervals informative.
+
+\begin{table}
+	\centering
+	\begin{tabular}{ll r r r r r}
+		\toprule
+		\multirow{2}{*}{Method} &  \multirow{2}{*}{Metric} &  \multicolumn{5}{c}{$\alpha$} \\
+		\cmidrule(lr){3-7}
+		& & 0.3 &   0.2 &   0.1 &   0.05 &   0.01 \\
+		\midrule
+		\multirow{2}{*}{MondrianForest}   & MER  & 0.28 & 0.20 & 0.13 &  0.094 &  0.062 \\
+		& RIS  &  0.19 &  0.23 &  0.29 &   0.349 &   0.460 \\
+		\midrule
+		\multirow{2}{*}{OnlineQRF} & MER & 0.23 & 0.14 & 0.07 &  0.036 &  0.015 \\
+		& RIS &  0.20 &  0.23 &  0.31 &   0.345 &   0.510 \\
+		\midrule
+		\multirow{2}{*}{CPApprox} & MER  & 0.22 & 0.13 & 0.06 &  0.032 &  0.006 \\
+		& RIS &   0.21 &   0.31 &   0.48 &   0.785 &    1.130 \\
+		\midrule
+		\multirow{2}{*}{CPExact} & MER  & 0.25 & 0.16 & 0.08 &  0.039 &  0.009 \\
+		& RIS &   0.28 &   0.37 &   0.57 &   0.622 &   0.944 \\
+		\bottomrule
+	\end{tabular}
+	\caption{MER and RIS for different significance levels. The target MER is
+		$\significance$ where $\significance$ the significance level.}
+	\label{tab:uncertain-significance}
+\end{table}
+

@@ -1,23 +1,24 @@
-\chapter{Session Length Prediction using Gradient Boosted Trees}\todo{Whole chapter needs fixing, sloppy and too much copying.}
-
-In this chapter we provide an overview of our work on session length
-prediction for media streaming using gradient boosted trees. After giving
+\label{ch:session-length}
+In this chapter we provide a real-world use-case that serves as motivation 
+for the rest of the work described in this dissertation. After giving
 an introduction to the problem and related work in Section \ref{sec:session-length-background},
 we describe the methods we used to analyze the data and make predictions in
 Section \ref{sec:session-length-method} and summarize our findings in Section
-\ref{sec:session-length-main-findings}.
+\ref{sec:session-length-main-findings}. Finally, we provide desiderata
+for a real-world system and identify gaps in the current state-of-the-art
+research. We provide solutions to each of the
+specific problems identified here in the following chapters.
 
 \section{Background}
 \label{sec:session-length-background}
 
-As streaming services have proliferated it's become important for streaming
+As media streaming services have proliferated it has become important for streaming
 companies to analyze their users' behavior to optimize their offering and
-meet business. One important factor in user satisfaction is the length of
-a user's sessions~\cite{dwell-time-satisfaction}, which we define as the
+meet their business goals. One important factor in user satisfaction is the length of
+users' sessions~\cite{dwell-time-satisfaction}, which we define as the
 the complete interaction of a
 user starting up the service, consuming a number of items, and ending
 their interaction after some elapsed time.
-
 This kind of interaction has been studied in the web search \cite{dwell-time-satisfaction, search-time-model} and ad click \cite{post-click-ads, post-click-survival}
 domains, but no study had investigate the media streaming domain before.
 
@@ -189,3 +190,43 @@ on a few data points for most users, leading to over-fitting. The models using t
 MSE objective place most of their probability mass closer to the origin and as a
 result perform better in terms of MAE, but miss many of the longer sessions
 and as a result perform worse in terms of RMSE.
+
+\section{Limitations and motivation for follow-up work}
+\label{sec:session-length-limitations}
+
+Through this work we are able to identify several limitations in the current
+state of the art in decision tree learning.
+
+First, this work demonstrated the need for algorithms that are
+able to learn online and adapt to a constantly changing environment. When
+providing estimates of users' session length, we want the predictions of
+the algorithms to adapt to the patterns exhibited throughout the day, 
+such as day/night and work/home cycles, and be able to adjust to drifting
+distributions. 
+In order to be able to continuously adapt our models, we have focused on online learning
+methods in Papers \boostvhtNum, \uncertaintreesNum that are both scalable and can continuously update tree models with new information about the world.
+
+Second, we were able to identify the importance of quantifying the uncertainty
+in predictions. For a quantity such as session length, exact predictions can
+be of little value.
+The ability to quantify the uncertainty in a prediction can be more useful as
+it allows us to make decisions with confidence and avoid giving users
+a bad experience. 
+For example if we know with a high degree of certainty
+that the true value of the session length will be between 30 and 45 minutes
+we can optimize recommendations and ad scheduling for a long running session.
+While there exist methods that are able to provide uncertainty estimates
+from decision trees for static datasets, no methods exist for online decision trees.
+\uncertaintrees
+fills this gap in research that combines an online learning model
+with the ability to provide uncertainty estimates.
+
+Finally, during this study we were able to get first hand experience with
+the accuracy, flexibility and scalability that boosted decision trees
+provide. The success of boosted trees has been well-documented,
+from winning data mining competitions \cite{xgboost}, to being the model of choice for mission-critical
+applications such as ad targeting at major enterprises \cite{mcrank, ctr-facebook}.
+What's common in these applications is the need to deal with potentially very
+high-dimensional data at scale.
+In our follow-up work, we have focused on expanding the 
+area of scalable boosted trees for high-dimensional data in Papers \boostvhtNum, and \blockgbtNum.
