@@ -1,1 +1,169 @@
 \chapter{Decision Trees}
+\label{ch:bg-decision-trees}
+
+\section{Learning Algorithms}
+\label{sec:gb-dt-learning-algorithms}
+
+\section{Ensembles of Decision Trees}
+\label{sec:gb-dt-ensembles}
+
+The success and popularity of decision trees comes in large part
+from their use in model ensembles. An ensemble is a collection
+of models whose decisions are aggregated to improve the model's
+performance.
+
+The two dominant paradigms in model ensembles are \emph{bagging} \cite{bagging} and
+\emph{boosting} \cite{boosting-schapire, boosting-freund-schapire}. Both
+methods can be interpreted using a resampling procedure. Bagging is
+based on the bootstrap \cite{bootstrap} resampling method and will re-use samples
+to train the members of the ensemble, and average their predictions.
+% Bagging can be used to reduce both the bias and variance of a learning method.
+Boosting methods on the other hand will assign increased weights to the
+hardest instances in the data. In the ``AdaBoost.M1'' version of the algorithm,
+a new ``weak'' learner is trained at each iteration, and a weighted sum of
+the decisions of each learner is taken to produce the final prediction.
+Further work by \citet{gradient-boosting-breiman} established a statistical framework
+for boosting and formalized \emph{gradient boosting} as gradient descent in function
+space.
+
+Decision trees have been very successfully used as parts of either bagging
+or boosting ensembles \cite{hundreds-classifiers}. Their characteristics as a fast non-linear learner,
+with high variance fit well both the bagging and boosting paradigms.
+The \emph{random forest} algorithm uses bagging to train an ensemble
+of randomized trees and combine their predictions, while gradient boosted trees
+uses a combination of trees and gradient boosting to produce
+accurate learners. In the following we give a brief overview for each method,
+and refer the reader to \cite{random-forest-survey} and \cite{biau-optimization} for recent surveys on
+random forests and gradient boosting respectively, or the monograph by \citet{esl}.
+
+\subsection{Random Forests}
+\label{sec:gb-dt-random-forests}
+
+\subsection{Gradient Boosted Trees}
+\label{sec:gb-dt-gbts}
+
+Gradient boosted trees have risen to be one of the most popular algorithms
+in machine learning due to their speed, scalability, and accuracy. Efficient
+implementations like XGBoost \cite{xgboost} and LightGBM \cite{lightgbm}
+are now widely deployed in production use-cases, and further emphasis
+is being given to efficient training \cite{dimboost} and inference \cite{quickscorer}.
+In this section we will describe the training and prediction process of GBTs,
+with a focus on the scalability aspect of the algorithm.
+
+\subsubsection*{Model}
+
+The gradient boosted tree model consists of an ensemble of decision trees,
+which are trained in an additive manner. At each iteration a new tree is added
+to the ensemble, chosen so that it minimizes an objective.
+
+\todo{Model definition. How original can we keep this? Combine Biau with XGBoost?}
+
+We use the
+regularized objective formulation used
+in \cite{xgboost}, and follow their notation throughout our description of the algorithm.
+The objective function is shown in Eq. \ref{eq:gbt-objective}.
+
+\begin{equation}
+	\begin{split}
+	\mathcal{L}(\phi) = \sum_{i} l\left(\hat{y}_{i},y_{i}\right) + \sum_{k} \Omega\left(f_{k}\right) \\
+	\text{where} \Omega\left(f_{k}\right) = \gamma T + \frac{1}{2} \lambda \norm{w}^2
+	\end{split}
+	\label{eq:gbt-objective}
+\end{equation}
+
+$l$ is a differentiable loss function and
+
+
+\subsubsection*{Training}
+
+The training process for a single gradient boosted tree can be roughly divided into three stages:
+First, we use the existing ensemble to make predictions for every data point in the training
+set. Second, we use the approximated objective function to determine the first and second order
+gradients for each data point. Finally, we use the calculated gradients to greedily determine
+the optimal split for every leaf in the tree. When we mention gradients here we are referring
+to both the first order and second order gradients for $x_i$, denoted as $g_i$ and $h_i$
+respectively.
+
+We will focus on the third part of the training stage in our description, as that entails the most
+computationally intensive part of GBT learning, the construction of the \emph{gradient histograms.}
+As a tree grows, we partition the complete training set into smaller parts, with each data
+point ending up in one leaf as we drop it down the tree.
+In order to determine the best split for every leaf, we need to iterate through the data
+partition of each leaf and create a gradient histogram for each feature for that leaf.
+
+In its simplest form, a gradient histogram gives us the sum of gradients at a leaf,
+given a feature value, that is, $\sum_{j}(G_i | x_i(f) = f_j)$, where $x_i$ is a data point
+that belongs to the current leaf and  $G_i$ is the gradient value of $x_i$ and $j$ is an
+indicator over the unique values of the feature $f$. In other words, it gives us the
+sum of the gradients of all data points in the leaf for a specific value of a given
+feature $f$.
+
+This enumeration of gradient-feature value combinations, will give us a value for every unique value
+of a feature which can become computationally impractical for real-valued features.
+What implementations like XGBoost and LightGBM use instead is \emph{quantized histograms},
+where we accumulate gradients in histogram buckets for every feature. For example
+we would sum the gradients of all data points whose $f_1$ value is $[0, 5)$, for all
+data points whose $f_1$ value is $(5, 10]$ etc. until we have iterated over
+the entire partition for a leaf.
+
+To determine the bucket ranges we
+can use \emph{quantile sketches} \cite{greenwald2016quantiles} that approximate
+the Cumulative Distribution Function (CDF) of each feature. We select a number of
+equi-weight buckets, that is, the ranges are selected such that every bucket
+has approximately the same weight-sum of data points. In the simplest case
+all instances have the same weight, and regular quantile sketch algorithms
+can be used, otherwise specialized, weighted sketches like the ones used by XGBoost
+have to be employed.
+The number of buckets to use is a
+parameter of the quantile sketch algorithm and depends on the type of sketch.
+There exist sketches where we select the number of buckets that
+will be used to represent the CDF, like the ones proposed by \citet{BenHaim2010parallel}
+or it is derived from the approximation error we choose for the sketches, for example
+for the sketches used by XGBoost or by the state-of-the-art KLL sketch \cite{karnin2016kll}
+used by DimBoost \cite{dimboost}.
+
+
+The selection of buckets can be done either at the beginning of training, taking the
+overall feature CDF, or at every leaf taking the CDF of each feature using only the
+partition for that leaf. \citet{xgboost} show that by selecting the buckets for every
+leaf separately, we can achieve the same level of accuracy, while using histograms with a higher approximation error, and hence reducing the memory footprint of the algorithm.
+
+Once the buckets have been determined for each feature, we use them to create
+the empty gradient histograms. At this point we have a gradient value for each data point, so
+we go through each feature and add the data point's gradient value to the gradient
+histogram bucket
+that corresponds to the feature value.
+For example, for a data point $x_i$ with a feature value $f_1 : 0.5$, we would add its
+gradient value to the
+the bucket $[0, 5)$ of the gradient histogram for $f_1$.
+When we are done iterating, each feature will have a corresponding gradient histogram,
+whose sum is equal to the sum of gradients for the leaf partition.
+
+We can then use these gradient histograms to determine the optimal split point for the
+leaf, by calculating the updated loss for each split:
+
+\begin{equation}
+	\mathcal{L}_{\text{split}} = \frac{1}{2} \left[\frac{\left(\sum_{i \in I_{L}} g_{i} \right)^{2}} {\sum_{i \in I_{L}} h_{i}+ \lambda} + \frac{\left(\sum_{i \in I_{R}} g_{i} \right)^{2}}{\sum_{i \in I_{R}} h_{i} + \lambda} - \frac{\left(\sum_{i \in I}g_{i}\right)^{2}}{\sum_{i \in I}h_{i}+\lambda}\right]-\gamma
+\end{equation}
+
+where $I_L, I_R$ determine the data points that end up to the left and right side of the split
+respectively, and $I$ is the complete set of data for the partition. At this point, to determine
+the best split we need to simply iterate through all the feature-split-point combinations
+and rank every candidate according to their loss reduction (or \textit{gain}) and select the
+best one.
+
+In the case of millions of features and a large bucket count this can also be
+computationally heavy operation, as we need to evaluate $|F| \times B$ split candidates.
+To mitigate this, we can apply efficient boosting approaches that try
+to reduce the number of features being examined. Examples include LazyBoost \cite{lazyboost}
+that uniformly subsamples the set of features,
+bandit methods \cite{bandits-boosting} that use information from previous iterations, or other adaptive
+methods like Laminating \cite{laminating} that determines the best feature by incrementally
+reducing the number of features being considered and increasing the number of examples being
+examined.
+
+\section{Online Decision Trees}
+\label{sec:gb-dt-online-trees}
+
+\section{Inference}
+\label{sec:gb-dt-inference}
