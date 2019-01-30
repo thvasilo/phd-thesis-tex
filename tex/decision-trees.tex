@@ -2,10 +2,10 @@
 \label{ch:bg-decision-trees}
 
 \section{Learning Algorithms}
-\label{sec:gb-dt-learning-algorithms}
+\label{sec:bg-dt-learning-algorithms}
 
 \section{Ensembles of Decision Trees}
-\label{sec:gb-dt-ensembles}
+\label{sec:bg-dt-ensembles}
 
 The success and popularity of decision trees comes in large part
 from their use in model ensembles. An ensemble is a collection
@@ -37,10 +37,10 @@ and refer the reader to \cite{random-forest-survey} and \cite{biau-optimization}
 random forests and gradient boosting respectively, or the monograph by \citet{esl}.
 
 \subsection{Random Forests}
-\label{sec:gb-dt-random-forests}
+\label{sec:bg-dt-random-forests}
 
 \subsection{Gradient Boosted Trees}
-\label{sec:gb-dt-gbts}
+\label{sec:bg-dt-gbts}
 
 Gradient boosted trees have risen to be one of the most popular algorithms
 in machine learning due to their speed, scalability, and accuracy. Efficient
@@ -163,7 +163,155 @@ reducing the number of features being considered and increasing the number of ex
 examined.
 
 \section{Online Decision Trees}
-\label{sec:gb-dt-online-trees}
+\label{sec:bg-dt-online-trees}
+
+As we have shown, decision trees are trained by recursively splitting the complete
+training set as we introduce more leafs. This process is incompatible with the online
+learning scenario where data points arrive sequentially and we never have access to
+the complete dataset. To tackle such a scenario, a number of online decision tree
+alternatives have been proposed.
+
+\subsubsection*{Hoeffding Trees}
+
+By far the most popular online decision algorithm for classification is the Hoeffding Tree (HT) \cite{vfdt},
+which has served as the basis for most of the follow up work on online decision
+trees. The aim of the HT is to create an online algorithm that will converge
+to the batch algorithm given enough samples.
+The learning in an HT, or as \citet{vfdt} name it, the Very Fast Decision
+Tree (VFDT), happens only at the leaves, and every data point is only utilized
+once i.e. th HT is a single-pass algorithm. The leaves accumulate statistics
+with the purpose of determining the best split. The tree gets its
+namesake from the use of the Hoeffding bound to determine if we have accumulated
+enough information at a leaf to trigger a split.
+
+Following the description from \citet{vfdt}, the Hoeffding bound \cite{hoeffding-bound} is a probability inequality that allows
+us to probabilistically  bound the true mean of a random variable $r$ for which we have
+made $n$ independent observations and computed their sample mean, $\bar{r}$. Given
+the range of the variable, $R$, the Hoeffding bound stats that with probability
+$1-\delta$, the true mean of the variable $r$ will be at least $\bar{r}-\epsilon$, where
+$\epsilon$ is defined as:
+
+\begin{equation}
+	\epsilon = \sqrt{\frac{R^2ln(1/\delta)}{2n}}.
+\end{equation}
+
+The Hoeffding bound is then used to determine with a high degree of certainty when
+it is time to split a leaf. Let $G(X_i)$ be the measure used to choose the feature
+to split on, as we mentioned in Section \ref{sec:bg-dt-learning-algorithms}, this can be
+information theoretic measures or the Gini index. Ideally we want the feature we select given a limited sample of $n$ observations, to be the same as would be chosen given infinite examples.
+The Hoeffding bound allows us to achieve that with high probability by applying
+it to determine the maximum possible difference between the best and second best
+features to split on. Specifically, let $\bar{G}(X_a)$ be the heuristic value for the
+current best feature, after having observed $n$ instances, and $\bar{G}(X_b)$ the second
+best. The difference between these two would be $\Delta \bar{G} = \bar{G}(X_a) - \bar{G}(X_b)$.
+We can then use the Hoeffding bound to determine that $\bar{G}(X_a)$ is indeed the
+best feature to split on with probability $1-\delta$, if $\Delta \bar{G} > \epsilon$.
+
+The process of learning at each leaf is then the following: For every incoming sample
+that ends up in a leaf, we update the sufficient statistics for that leaf, which we
+use to calculate the heuristic for the split, e.g. the Gini index. Theoretically,
+one could check if we have gathered enough information to split a leaf after each
+incoming sample, but that would introduce a large computational overhead. What we
+do instead, for example in the implementation of the algorithm in the MOA library \cite{bifet2010moa},
+is to only check if the Hoeffding bound is satisfied periodically, for example
+every 200 samples. Another parameter of the algorithm is the probability of an error,
+$\delta$. This parameter can have a large effect on the final tree, as setting it
+too high can lead to early splits being taken that end up being sub-optimal, as so
+values in the order of $10^{-7}$ are often used \cite{data-stream-mining}.
+
+HT was designed for the classification setting, where handling discrete attributes
+is straightforward, we can just keep a table of frequencies for classes and feature
+values. The situation
+is different for continuous attributes however, where we need to maintain per-class
+information about the values. In the worst case we would need to maintain the class
+frequencies for every unique value in a continuous feature, something that is impractical
+for online learning, where datasets are potentially unbounded and the memory footprint
+of the algorithms should remain as small as possible. For features with many repeated
+values it is possible to use a binary tree structure with counters that allows for
+fast storage of the values, however has large memory cost. Alternatives include
+using online histograms or quantile sketches \cite{greenwald2016quantiles}
+to maintain approximations of the Cumulative Distribution Function of
+each feature, or approximating the distribution of feature using a Gaussian.
+We provide a more in depth explanation of how quantile sketches can be used
+in Section \ref{sec:bg-dt-gbts} and refer the interested reader to Chapter 4 of \citet{data-stream-mining} for details on the other methods.
+
+The Hoeffding Tree has served as the starting point for most of the follow up work on
+online decision trees. \citet{vfdt-normal} use a ``Normal'' test to improve
+upon the statistical efficiency of the Hoeffding bound. The proposed method achieves
+the same probabilistic bound with a reduced sample size, by taking
+advantage of properties of the Gini index and entropy. More recently,
+\citet{efdt} propose an algorithm that uses the Hoeffding bounds but
+will re-visit nodes that have already been split and evaluate if their
+split decision should be updated. This leads to a large improvement in accuracy
+compared to the base HT,
+at the cost of added computation and memory necessary to maintain
+the sufficient statistics for internal nodes and re-evaluate split
+decisions.
+
+
+However, \citet{vfdt-mcdiarmid} claim that the assumptions made
+by the Hoeffding bound-based algorithms are commonly violated as the bound assumes
+real-valued data, and the fact that measures like the Gini index and information
+gain cannot be expressed as sums of elements. As an alternative they propose
+using McDiarmid's inequality of which Hoeffding's inequality is a special case.
+Their use of the McDiarmid
+bound is however computationally intensive. This drawback is mitigated
+in their follow-up work \cite{vfdt-gaussian} which follows in part the work from \citet{vfdt-normal}
+and provides a bound on the information gain difference between two potential
+split attributes based on the Gaussian distribution.
+
+One of the few methods that is aimed at regression is the Fast Incremental Model
+Tree (FIMT) algorithm\todo{Expand}...
+
+\subsubsection*{Mondrian Forests}
+
+All the methods we mentioned so far have made use of the same base tree building
+algorithm that was first proposed for VFDT: each data point is only evaluated once,
+the statistics are maintained only at the leafs, with the exception of \cite{efdt},
+and heuristics that take into consideration the conditional distribution of the
+features given a class are used to determine the splits. \citet{mondrian-forests-original}
+proposed a new class of algorithm based on Mondrian processes \cite{mondrian-process}
+that provides an new way to train online trees.
+
+Mondrian processes are a continuous-time
+Markov process that form hierarchical partitions of the feature space $\mathbb{R}^D$.
+The partitions are nested and each subsequent partition refines its parent. While
+these processes are non-parametric and define infinite partitions, Mondrian trees
+restrict them using a \emph{lifetime} parameter $\lambda$, which turns out to be hard to solve,
+so the the authors choose instead to stop splitting nodes when the data points
+within them all have the same class value. Compared to regular decision trees,
+Mondrian trees have two main differences: The split decisions are always within
+the range of observed data, i.e. the split decision create ``boxes'' in feature
+space and not axis parallel cuts, and like the Extremely Randomized Tree algorithm
+\cite{ert}, the splits are chosen uniformly at random and independently of the
+class label. The main property that make Mondrian trees possible to train
+online is \emph{projectivity}. We can grow a new tree by sampling from a restricted
+distribution of Mondrian trees that have already been trained, extending the tree
+to include the new data. The Mondrian tree distribution is in this sense ``self-consistent''
+\cite{mondrian-forests-original} which allows us to grow them from the previously
+sampled tree in an online manner. The original Mondrian trees are aimed at classification
+and follow up work extends them to handle regression as well \cite{mondrian-forests-regression}.
+
+One main characteristic of Mondrian trees is that they are able to determine the full
+predictive posterior distribution of the dependent. This means that it is able to
+produce a distribution of the form $p_T(y |\mathbf{x}, \mathcal{D}_{1:N})$, where
+$y \in {1,..., K}$ for the multi-class classification scenario, or $y \in \mathbb{R}$
+for regression. For classification the posterior is modeled as a hierarchy
+normalized stable processes~\cite{nsp}, while for regression a hierarchical Gaussian is used.
+The algorithm uses an ensemble of Mondrian trees to create a Mondrian Forest and combine
+their predictions for a final output.
+
+The main disadvantage of Mondrian forests is their computational cost. The model
+requires that learning happens at all levels of the tree, unlike most of the HT
+algorithms where learning only occurs at the leaf level. Because a complicated
+model of the posterior needs to be updated, the computational cost of the algorithm
+increases with each incoming data point is is $\mathcal{O}(\log n)$ for the $n$'th
+data point, in other words it has a cost of $\mathcal{O}(\log N!)$ to train N
+data points. In addition, the online version of the algorithm needs to maintain
+all data points in at the leafs in order to be be able to update the distributions.
+This makes its memory cost prohibitive  for an streaming setting with limited resources.
+
+
 
 \section{Inference}
-\label{sec:gb-dt-inference}
+\label{sec:bg-dt-inference}
