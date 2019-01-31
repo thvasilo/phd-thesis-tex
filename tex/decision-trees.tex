@@ -39,6 +39,60 @@ random forests and gradient boosting respectively, or the monograph by \citet{es
 \subsection{Random Forests}
 \label{sec:bg-dt-random-forests}
 
+Random Forests (RF), originally proposed by \citet{random-forests}, have been shown to be one of the
+most versatile algorithms in machine learning~\cite{hundreds-classifiers}. They are an
+ensemble method the combines multiple randomized trees, each trained with a sample
+of the original dataset, and averages their predictions to produce the final outcome.
+Random forests can deal with classification or regression tasks and provide estimates
+of the importance of variables, aiding in their interpretability.
+
+Following the notation in \cite{random-forest-survey}, the algorithm works by growing
+$M$ randomized trees, each on a sample from the original dataset $a_n$. The sample
+$a_n$ can be taken with or without replacement, although usually it is a boostrap
+sample~\cite{bootstrap} with a size equal to the original dataset. In the original
+algorithm by \citeauthor{random-forests}, the trees are grown using the CART criteria\todo{Ensure we have introduced CART trees!}, with the difference that we limit the number of features being
+considered for the splits, with \citeauthor{random-forests} selecting one feature or
+$log_2{p} + 1$, while \citeauthor{random-forest-survey} recommend using $\lceil p/3 \rceil$,
+see \cite{rf-parameters} for an investigation of RF parameter settings.
+For the regression task the predictions of the forests are calculated
+by taking the average prediction of all trees, while for classification
+we take a majority vote among all trees.
+
+The random sampling and independent growing of each tree provides two distinct advantages
+to the RF algorithm. First, because the trees are grown independently, unlike the boosted trees
+discussed in the next section, parallelizing their learning is trivial. In the parallel
+setting where we have access to the complete dataset, or if the complete dataset
+fits in memory, parallelization is as simple as training a different tree on
+each bootstrap sample. The situation changes
+however for distributed data because of the nature of the bootstrap: depending
+on the sample selection there might be the need for data points to be communicated
+over the network, with a resulting high communication cost.
+\citet{ensembles-bites} propose instead to train the trees independently
+and merge the votes, or one could make use of the bag of little bootstraps
+to train the models \cite{bag-of-boostraps}. Alternatively, we can create split
+histograms on data partitions and communicate those over the cluster to determine the
+best split for each leaf, similar to how trees are grown for XGBoost \cite{xgboost}.
+
+Second, the fact that for each tree some samples from the dataset are not
+used to train it, known as \emph{out-of-bag} (OoB) samples, creates opportunities
+to use those data points to extract useful information about the performance
+of the tree. We can use the OoB samples to adjust the hyper-parameters of the
+algorithm without the need to use a validation dataset. We can also use
+the out-of-bag sample to estimate \emph{variable importance}.
+\citet{random-forests} proposed the Mean Decrease Accuracy measure of
+variable importance, where using the OoB instances for a tree, we
+randomly permute the values a feature, and make predictions
+for the permuted and original data. We take the average
+of the difference between the OoB error between the permuted
+and original data and use that as an estimate of the importance
+of the variable. \citet{random-forest-survey} note the
+issues this approach faces with correlated variables, because the
+algorithm tests variables in isolation rather than conditional
+to each other.
+Finally, \citet{johansson2013conformal} make use of the OoB samples to provide
+inductive conformal prediction estimates without the need for a
+validation set, a property we exploit in \uncertaintrees as well.
+
 \subsection{Gradient Boosted Trees}
 \label{sec:bg-dt-gbts}
 
@@ -48,7 +102,10 @@ implementations like XGBoost \cite{xgboost} and LightGBM \cite{lightgbm}
 are now widely deployed in production use-cases, and further emphasis
 is being given to efficient training \cite{dimboost} and inference \cite{quickscorer}.
 In this section we will describe the training and prediction process of GBTs,
-with a focus on the scalability aspect of the algorithm.
+with a focus on the scalability aspect of the algorithm. We provide an in-depth
+description of the histogram construction algorithm which we have found to be missing
+from most relevant literature. We refer the interested reader to a recent overview
+of the optimization process of GBTs by \citet{biau-optimization}.
 
 \subsubsection*{Model}
 
@@ -104,7 +161,7 @@ What implementations like XGBoost and LightGBM use instead is \emph{quantized hi
 where we accumulate gradients in histogram buckets for every feature. For example
 we would sum the gradients of all data points whose $f_1$ value is $[0, 5)$, for all
 data points whose $f_1$ value is $(5, 10]$ etc. until we have iterated over
-the entire partition for a leaf.
+the entire partition for a leaf.\todo{Mention distributed boosting by Lazarevic}
 
 To determine the bucket ranges we
 can use \emph{quantile sketches} \cite{greenwald2016quantiles} that approximate
@@ -248,7 +305,6 @@ at the cost of added computation and memory necessary to maintain
 the sufficient statistics for internal nodes and re-evaluate split
 decisions.
 
-
 However, \citet{vfdt-mcdiarmid} claim that the assumptions made
 by the Hoeffding bound-based algorithms are commonly violated as the bound assumes
 real-valued data, and the fact that measures like the Gini index and information
@@ -260,8 +316,37 @@ in their follow-up work \cite{vfdt-gaussian} which follows in part the work from
 and provides a bound on the information gain difference between two potential
 split attributes based on the Gaussian distribution.
 
-One of the few methods that is aimed at regression is the Fast Incremental Model
-Tree (FIMT) algorithm\todo{Expand}...
+One of the few online decision tree algorithms that is aimed at regression
+is the Fast Incremental Model Tree (FIMT) algorithm by \citet{fimt}. FIMT
+is a model tree, i.e. instead of simply using the average of the labels
+in its leaves to make prediction, it maintains a linear model, which is
+fit on the samples arriving at the leaf, and is then later used for prediction.
+The merit of a split is calculated based on the Standard Deviation Reduction (SDR),
+similarly to batch regression trees like the M5 model \cite{m5-tree}, defined as:
+
+\begin{equation}
+	\begin{split}
+		\text{SDR}(h_A)=sd(S)-\frac{|S_L|}{|S|}sd\left(S_{L}\right)-\frac{|S_R|}{|S|}sd\left(S_{R}\right), \\
+		sd(S) = \sqrt{\frac{1}{|S|}\left(\sum_{i=1}^{N}y_{i}^{2}-\frac{1}{|S|}\left(\sum_{i=1}^{N}y_{i}\right)^{2}\right)}
+	\end{split}
+\end{equation}
+
+\noindent
+where $h_A$ the proposed split on feature $A$, and $S_L, S_R$ the resulting
+data partitions on the left and right side of the split.
+
+SDR is possible to be calculated online, by maintaining only three statistics per leaf,
+making the learning of these trees efficient. However, the base FIMT uses a binary tree
+to store feature values, leading to a potentially high memory cost, for which
+the authors provide solutions like disabling non-promising split points and dropping
+parts of the tree. To determine the
+probability of a split being optimal, the authors again use the Hoeffding bound
+on the SDR ratio of the two best splits which will be in $[0, 1]$ range.
+The linear models at the leaves are perceptron models, updated using stochastic
+gradient descent.  Finally, FIMT includes a change detection system in order to
+adapt to concept drift \todo{Make use we've defined concept drift before.}
+based on the Page-Hinckley change detection test~\cite{ph-test}.
+
 
 \subsubsection*{Mondrian Forests}
 
@@ -309,7 +394,7 @@ increases with each incoming data point is is $\mathcal{O}(\log n)$ for the $n$'
 data point, in other words it has a cost of $\mathcal{O}(\log N!)$ to train N
 data points. In addition, the online version of the algorithm needs to maintain
 all data points in at the leafs in order to be be able to update the distributions.
-This makes its memory cost prohibitive  for an streaming setting with limited resources.
+This makes its memory cost prohibitive for a streaming setting where with limited resources.
 
 
 
