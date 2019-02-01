@@ -108,24 +108,6 @@
 \newcommand{\CONTRAD}{\Rightarrow\!\Leftarrow}
 \newcommand*{\EVT}[1]{\langle {#1} \rangle}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% SWITCH TODOS ON/OFF HERE %%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\newboolean{commentSwitch}
-%\setboolean{commentSwitch}{true}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%\ifthenelse{\boolean{commentSwitch}}{
-%  \newcommand{\TODO}[1]{\textcolor{red}{TODO: #1}}
-%  \newcommand{\TODOP}[1]{\textcolor{red}{TODO: #1}}
-%  \newcommand{\TODOX}[1]{\textcolor{red}{TODO: #1}}
-%  \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{NOTE}: #1}}
-%  \newcommand{\DONEX}[1]{\textcolor{blue}{#1}}
-%}{
-%  \newcommand{\TODO}[1]{}
-%  \newcommand{\NOTE}[1]{}
-%}
 % Margin width for todo notes
 \setlength{\marginparwidth}{1.7cm}
 
@@ -261,6 +243,30 @@
 % GBT formulation
 \newcommand{\gbtNumTrees}{\ensuremath{\Kappa}\xspace}
 \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+% Algorithm settings
+\newcommand{\alg}[1]{\bigbreak\noindent{\bf #1}}
+\newcommand{\algskip}{\itemsep=-8pt\baselineskip=0pt}
+\newcommand{\commentedtext}[1]{}
+\newcommand{\myalgostyle}[1]  {{#1}\xspace}
+%% my algorithms
+\newcommand{\optselect}{\myalgostyle{OptSelect}}
+%\newcommand{\optselect}{OptSelect\xspace}
+
+% Algorithm2e
+\SetSideCommentLeft 
+\SetKwFor{During}{during}{do}{}
+\SetKwInOut{Output}{output}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Initialization}{init}
+%\SetKwComment{Comment}{// }{}
+\SetKw{And}{ and }
+\SetKw{Or}{ or }
+\SetKw{Not}{ not }
+\DontPrintSemicolon
+\newcommand{\define}{\ensuremath{{\,\leftarrow\,}}\xspace}
+\newcommand{\ensemble}{\ensuremath{\mathbf{h}}\xspace}
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 
 % \raggedbottom
