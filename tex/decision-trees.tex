@@ -1,9 +1,59 @@
 \chapter{Decision Trees}
 \label{ch:bg-decision-trees}
 
+Decision trees are one of the most important and successful algorithms
+in machine learning. They have seen widespread adoption in practically
+every area of machine learning, from their original domain in classification
+and regression, to ranking, semi-supervised learning, survival analysis,
+quantile regression, and unsupervised learning\todo{Cite!}. In this chapter
+we will provide a brief review of the literature on decision trees in
+areas that are relevant to our work, namely ensembles of decision
+trees and online decision trees. For a comprehensive review of
+decision tree literature we refer the reader to the monograph
+by \citet{decision-trees-book} or the introductory textbook by \citet{esl}.
+
 \section{Learning Algorithms}
 \label{sec:bg-dt-learning-algorithms}
-...\todo{CART, ID3, decision criteria, base learning algorithms.}
+
+The two original tree-learning algorithms, the
+Classification and Regression Trees (CART)~\cite{breiman1984cart} algorithm and the ID3
+algorithm~\cite{id3}, were developed in parallel. In our description we will
+focus on the CART regression algorithm, following the description from \cite{esl}.
+
+Decision trees create recursive binary partitions of the input space,
+with axis parallel cuts. Let $R_1, ..., R_M$ denote the $M$ regions created by
+the model.
+The model predicts the same value $\hat{c}_m$ for all data points
+that fall under the same region in the partitioned space. For regression,
+using the sum of squared errors as the objective function, the best possible
+$\hat{c}_m$ is the average of the label values in that region.
+Finding the optimal partitioning for decision trees is known to be
+NP-complete \cite{dt-np-complete} and the best possible method
+is to use a greedy algorithm to select the splits~\cite{dt-hardness}.
+In the regression case, CART achieves that by selecting splits
+that minimize the squared error of the created binary split, selecting
+for each region the average value of the labels.
+In the classification case, the splitting criterion is an information-theoretic
+node impurity measure like the Gini index or the cross-entropy, defined as:
+
+\begin{equation}
+	\begin{split}
+		\text{Gini Index} = \sum_{k=1}^K\hat{p}_{mk}(1 - \hat{p}_{mk}), \\
+		\text{Cross-entropy} = -\sum_{k=1}^K\hat{p}_{mk} \log{\hat{p}_{mk}},
+	\end{split}
+\end{equation}
+
+where $k$ the class, $m$ the node and $\hat{p}_{mk}$ the proportion of
+the observation for class $k$ in $m$.
+
+While one could keep growing a decision tree until it perfectly fits the data,
+that will lead to overfitting and bad generalization. Therefore
+it is common to employ some form of \emph{pruning} strategy to limit the
+complexity of the model. This can be done by introducing some
+form of complexity penalty to the tree, limiting the number of terminal
+nodes, or having a minimum number of examples in each terminal node
+\cite{breiman1984cart}.
+
 
 \section{Ensembles of Decision Trees}
 \label{sec:bg-dt-ensembles}
@@ -346,7 +396,7 @@ on the SDR ratio of the two best splits which will be in $[0, 1]$ range.
 The linear models at the leaves are perceptron models, updated using stochastic
 gradient descent.  Finally, FIMT includes a change detection system in order to
 adapt to concept drift \todo{Make use we've defined concept drift before.}
-based on the Page-Hinckley change detection test~\cite{ph-test}.
+based on the Page-Hinckley change detection test~\cite{ph-test, ph-test2}.
 
 \todo{Online RFs?}
 

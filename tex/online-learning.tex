@@ -6,6 +6,85 @@
 
 \section{Evaluation}
 
+The evaluation of online learning algorithms differs from the batch
+case, not only because of the potential for a concept drift occurring,
+but also due to considerations about the computational cost of the
+methods themselves. The research on valid evaluation methods for
+streaming methods is somewhat limited however, with the notable exception
+of the work by \citet{online-evaluation-kdd}, further expanded in
+\cite{online-evaluation-journal}.
+In this section we provide
+a brief overview of the challenges and proposed solutions for
+the evaluation of online learning algorithms and refer the
+reader to \cite{online-evaluation-journal} for an in-depth look
+into these issues.
+
+The authors identify three areas that
+become important in the evaluation of streaming learning
+algorithms: \emph{Space} in terms of the memory requirement of the algorithm, \emph{learning time}, and \emph{generalization power}.
+Each of these aspects is important in the online learning scenario, and
+we will discuss the space and generalization power aspects.
+
+
+Since these algorithms are designed for limited resource environments,
+the space requirements of the algorithm are an important consideration.
+Apart from the theoretical analysis of the space cost of the algorithms,
+their empirical costs should also be analyzed. \citet{ram-hours} introduced
+the concept of \emph{RAM-hours} for this purpose, with the aim of estimating
+the cost-efficiency of an algorithm in a cloud environment where instances
+are charged according to the time taken to use them, and instances with
+higher memory capacities are usually more expensive. \citet{vfdt} also
+make specific mention of the memory requirements of the online decision
+tree algorithm they develop, and provide solutions that make the algorithm
+memory bounded. However as \citet{online-evaluation-journal} mention, this
+is an aspect often overlooked in the evaluation of online learning
+algorithms.
+
+In terms of evaluating the generalization power of online learning
+algorithms, one aspect that requires special attention is the fact
+that the learner evolves as we train it with more samples, so it
+performance in the early stages of learning can be very different
+to later stages. The two strategies proposed as viable for the online
+setting in \cite{online-evaluation-journal} are \emph{holdout testing}
+and \emph{prequential evaluation}. Holdout testing refers to the
+established evaluation method from batch learning, where we train
+our algorithm on a subset of the data, the \emph{training set},
+and evaluate its performance on a set of unseen data, the
+\emph{test set} or \emph{holdout set}. This requires us to set
+specific interval at which we check the performance of the algorithm
+on the test set, although theoretically we could also perform this
+test after each example, but for a large computational cost if
+the test set is large.
+
+An alternative is to use
+predictive sequential (prequential) evaluation where we present
+an example to the algorithm, make a prediction, update our metric,
+and finally reveal the example's label and proceed to train the
+algorithm with it. This method can also be used in situation
+where the label is available for only few of the points in the
+data set. However, because the model will exhibit worse performance
+in the early learning stages, it is recommended to apply a forgetting
+factor to the metric, so that large errors made in the start do
+not severely affect the over evaluation of the algorithm. This
+can be done using sliding windows, i.e. evaluating the error using
+overlapping subsets of incoming dataset, or a using fading
+factors which discount the error for older examples \cite{online-evaluation-kdd}.
+These have the added advantage of being faster and memory-less
+compared to using sliding windows.
+
+One common issue in classification, in the batch as well as the online setting, is class
+imbalance. To deal with this problem in the online setting, \citet{kappa-statistic}
+proposed the Kappa statistic, and its extension $\kappa_m$ \cite{kappa-m},which is a robust estimator that takes into consideration
+the probability that a classifier will produce the correct prediction by chance.
+The metric has also been expanded to deal with temporal dependence
+in the labels of subsequent examples \cite{temporal-dependence}.
+More recently, \citet{prequential-auc} proposed an online adaptation
+of the area under the ROC curve metric (AUC) \cite{auc}, called
+\emph{prequential AUC} which can deal with the class-imbalance
+problem and in the presence of potential concept drift, and perform
+an evaluation against metrics like the Kappa statistics to show
+that each captures a different aspect of the performance.
+
 \section{Online Ensemble Methods}
 
 Due to their approximate nature online learning models often demonstrate
