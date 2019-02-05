@@ -5,6 +5,7 @@
 \section{Drift Adaptation}
 
 \section{Evaluation}
+\label{sec:bg-ol-evaluation}
 
 The evaluation of online learning algorithms differs from the batch
 case, not only because of the potential for a concept drift occurring,
@@ -241,3 +242,51 @@ parallel online boosting, while maintaining their guarantees.
 \end{algorithm}
 
 \section{Software}
+
+Compared to the multitude of options available for batch learning, \todo{Cite?} the availability
+of open-source software for online learning is relatively limited. In this section we will
+mention the most popular libraries for online learning, and point out the ones we have used to develop
+our work.
+
+Perhaps the original online learning library released is the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the VFDT algorithm.
+It includes the VFDT and its variations, as well as data pre-processing tools.
+
+One of the most established open-source frameworks for online learning is MOA, which stands
+for Massive Online Analysis \cite{bifet2010moa}. MOA includes a collection of
+learning algorithms, evaluation methods and metrics, data generators as well as
+a graphical interface to perform repeatable experiments. MOA is designed in the
+vein of WEKA \cite{weka} and includes interfaces that allow inter-operability
+between the algorithms available in WEKA and MOA. Like WEKA, MOA has an extensible
+design that allows developers to re-use parts of the existing algorithms to develop
+new methods, and easily evaluate new methods using many of the methods mentioned
+in Section \ref{sec:bg-ol-evaluation}, by adhering to a simple API. In our work,
+we have used MOA to implement the algorithms of \uncertaintrees and as a comparison
+in \boostvht. Other single-worker online learning libraries
+include LIBOL~\cite{libol} and more recently scikit-multiflow~\cite{sk-multiflow}.
+
+One drawback of these libraries is that they are designed to run on a single machine and therefore
+can have issues with massive, distributed streams. Apache SAMOA \cite{samoa} is an effort
+to bring the design principles of MOA into the distributed setting, utilizing a platform-independent
+design that allows it to run on top of many distributed stream processing engines like
+Apache Flink \cite{flink}, Apache Storm~\cite{storm} and Apache Samza~\cite{samza}.
+Similarly to MOA, it provides learning algorithms and evaluation methods, and its
+design makes it easy to extend with new algorithms.
+We have used SAMOA as the distributed engine for \boostvht.
+
+Another library aimed at distributed stream learning is StreamDM \cite{streamdm}.
+StreamDM also inherits some of the design aspects of MOA, providing similar interfaces
+to access learning algorithms and run evaluations, but unlike SAMOA
+is built to run on top of only the Apache Spark~\cite{spark} streaming engine.
+While running on top of a distributed stream engine can make the development
+of distributed algorithms easier, it can have a negative effect on the
+performance of the library, due to the overhead introduced by the
+engine. To tackle this is issue, an optimized version of StreamDM
+was proposed in \cite{streamdmPP}. An earlier attempt at developing
+a distributed streaming learning framework was Jubatus~\cite{jubatus}.
+
+Finally, one of the most successful frameworks that relies on online learning,
+albeit to deal with batch problems, is Vowpal Wabbit (VW) \cite{vw}. VW makes
+use of parallel and distributed Stochastic Gradient Descent \cite{sgd} as its main
+learning algorithm and has been extended to provide a number of online learning models,
+including online boosting \cite{Beygelzimer2015optimal}, online Latent Dirichlet Allocation
+\cite{ldaOnline}, and contextual bandits \cite{onlineBandits}.
