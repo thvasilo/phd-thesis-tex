@@ -1,8 +1,164 @@
 \chapter{Online Learning}
 
+In this chapter we will provide an introduction to online learning, which is the learning
+setting for Papers \boostvhtNum and \uncertaintreesNum. We start by providing an brief
+overview of the kinds of models available in Section \ref{sec:bg-ol-models}, present
+the problem of concept drift and proposed solutions in Section \ref{sec:bg-ol-adapation},
+and identify issues and solutions for evaluation in Section \ref{sec:bg-ol-evaluation}.
+Since our work focuses on ensemble methods we present the approaches in Section
+\ref{sec:bg-ol-ensembles} and finish the chapter with a look at the available
+open-source software for online learning in Section \ref{sec:bg-ol-software}.
+
 \section{Models}
+\label{sec:bg-ol-models}
+
+As with batch learning there exists of variety of models in the online
+learning domain. Usually these are models that were first developed
+for the batch setting and subsequently adapted to online learning.
+In this section we focused on supervised learning methods for
+classification and regression, and explore different
+learning representations to demonstrate the variety of
+methods available for online learning, following the
+classification in \cite{onlineML}. For a comprehensive
+introduction to the various models available in streaming
+learning we refer the reader to \cite{moa-book}.
+
+\subsection*{Instance Based Learning}
+One of the simplest and most intuitive methods in machine learning
+is Instance Based Learning (IBL), which usually takes the form of
+nearest neighbor approach. IBL exemplifies many characteristics
+that make it a good candidate for online learning, and the
+IBLStreams work of \cite{ibl-streams} delves into these.
+In Instance Based Learning, we make predictions based on the instances themselves, unlike
+model-based approaches that try to extract a model (function) from the
+data. IBL algorithms are inherently incremental, and can be faster to
+update compared to a model-based approach, however suffer from two
+distinct disadvantages: First, we need to store the data which in a
+massive streaming data scenario can be infeasible. To deal with this
+issue IBLStreams will evict the oldest examples once an upper limit on
+the size is hit. Second, inference can be much slower as it requires
+finding the k nearest neighbors to the incoming dataset, which even when
+using efficient indexing structures (like LSH) can be very costly
+compared to a model-based prediction, e.g. from a linear model. The
+authors suggest that IBL makes more sense in scenarios where updates are
+often but queries infrequent. In terms of drift adaptation IBLs can have
+the advantage that removing the effect of older data points is easy
+compared to say an ANN model, but it is still highly model-dependent.
+
+In terms of the learning process of IBLStreams, the authors suggest ways to deal with
+the concept drift scenario. They mention the limitations of a non-adaptive, window-based
+approach and suggest that IBL methods are good candidates for learning in
+under drift because of their locality property, that is, that introducing
+a new example will only affect the predictions made around that region.
+Since an example should only be included in the model if it improves the
+accuracy, but that impossible to know ahead of time, we can use heuristics
+to determine when to discard examples. One could use the temporal and/or spatial
+relevance, or consistency of the examples to the current concept.
+In the IBLStreams algorithm, the contents and size of the ``case base'',
+i.e. the examples that form the nearest neighbor representation, is
+updated automatically. IBLSTreams tries to maintain a balance between
+maintaining few examples in the case base in order to be able to deal
+easier with concept drift, while keeping the set large enough so that
+predictions under a single concept are accurate. To that end, they
+use statistical change detection mechanisms and also provide ways
+to update the parameters of the algorithm, e.g. the number of nearest
+neighbors to examine based on the observed error.
+
+\subsection*{Linear Models}
+In terms of model-based approaches, linear models are popular
+for online learning due to their simplicity, efficiency and interpretability.
+For regression these models have the general form~\cite{esl}:
+
+\begin{equation}
+	f(X) = \beta_0 + \sum_{j=1}^{p}{X_j\beta_j}
+\end{equation}
+
+and assume a linear relationship between the dependent and independent predictors.
+One of the earliest examples of an online linear classification model is the seminal
+Perceptron algorithm \cite{perceptron} that tries to find a separating hyperplane
+between two classes based on the distance of the misclassified points to the
+decision boundary~\cite{esl}.
+In the online setting, linear models are typically trained using a form
+of stochastic gradient descent, that moves the coefficients
+of the model according to the gradient of a single data point
+and a step size parameter.
+This is a simple algorithm that however has many drawbacks
+noted in \cite{esl}, regarding the stability of the algorithm
+for perfectly separable data, its dependence on correctly setting
+the step size, and the fact that the algorithm does not
+converge when the data are not separable.
+Another important family of linear algorithms designed for the online domain
+are Passive-Aggressive algorithms \cite{passive-aggressive}.
+These are margin-based algorithms for classification, regression and
+sequence prediction that solve a constraint optimization problem.
+For every incoming incoming example, PA algorithms
+try to achieve a margin between the predicted value and true label
+by either not changing the model (passive) when the margin is satisfied,
+or by applying the necessary correction to the model coefficients
+to enforce a zero loss when the margin is not satisfied (aggressive).
+While being a linear model, PA algorithms can make use of the kernel trick to
+employ non linear predictors, as done by the seminal work
+on Support Vector Machines (SVM) by \citet{svm-book}.
+
+\subsection*{Support Vector Machines}
+SVMs have also
+been extended to work in the online domain \cite{online-kernels}
+where the main challenge is the need to maintain a set of support vectors
+in memory, as they grow linearly with the number of prediction errors
+\cite{budget-classification}. The work of \citet{budget-classification}
+deals with this issue by providing an online learning algorithm
+that enforces sparsity through an insertion and deletion phase.
+Once an erroneous example is inserted, the algorithm will look
+for past examples that are made redundant by the new point,
+and remove those to save memory.
+Another approach is taken by the Forgetron \cite{forgetron} which,
+for every mistake made by the algorithm, runs the standard
+Perceptron update, shrinks the support vector coefficients, and removes
+the support vectors with the smallest coefficients.
+The Passive-Aggressive algorithm has also been modified
+to perform kernel learning on a budget \cite{pa-budget},
+i.e. with a bounded model size, by introducing a additional
+constraint to the original problem that removes one support
+vector for every new error once the budget is met.
+One key drawback of these methods
+is the need to determine a budget for the model size beforehand.
+More recently, new methods have been proposed to scale up
+online kernel learning to massive datasets while maintaining a bounded model size,
+by transforming the feature space, and then performing linear learning \citet{large-online-kernels}
+or by approximating new instances by ``core points''
+scattered across the input domain~\citet{approximation-vm}.
+
+\subsection*{Rule-based Learning}
+Decision rules \cite{decision-lists} and decision trees \cite{breiman1984cart} are two closely related learning methods
+that make predictions in terms of a set of \emph{if-then} rules. Since
+decision trees play a central role in our research we dedicate a separate
+chapter to review them (Chapter \ref{ch:bg-decision-trees}) and focus on
+online decision rules here. Decision rules use conjunctions of conditions
+on the attribute values to make predictions of the form
+\texttt{if <conditions> then <prediction>}. This structure makes them
+some of the more easily interpretable models available.
+In the classification task
+these are typically learned by maximizing the information gain
+of introducing a rule for a given outcome.
+\citet{decision-rules-streams}
+provided one of the first decision list learning algorithms aimed at the streaming
+domain, which updates rules by updating a set of sufficient statistics for each
+rule. Rules are expanded by selecting the condition, for example a threshold on
+a numerical feature, that minimizes the entropy of the class labels of the example
+that are covered by that rule~\cite{decision-rules-streams}.
+The method uses the Hoeffding bound \cite{hoeffding-bound} to determine when it is time
+to update a rule, either by expanding an existing one or introducing a new rule.
+The process was later expanded to handle cases of concept drift \cite{adaptive-rules-classification}
+and the regression task~\cite{adaptive-rules-regression}.
+
+
+
+%[Online Gaussian Processes] \\
+
+
 
 \section{Drift Adaptation}
+\label{sec:bg-ol-adapation}
 
 \section{Evaluation}
 \label{sec:bg-ol-evaluation}
@@ -13,7 +169,7 @@ but also due to considerations about the computational cost of the
 methods themselves. The research on valid evaluation methods for
 streaming methods is somewhat limited however, with the notable exception
 of the work by \citet{online-evaluation-kdd}, further expanded in
-\cite{online-evaluation-journal}.
+\cite{online-evaluation-journal}\todo{Maybe mention "The comparison and Evaluation of Forecasters"}.
 In this section we provide
 a brief overview of the challenges and proposed solutions for
 the evaluation of online learning algorithms and refer the
@@ -87,6 +243,7 @@ an evaluation against metrics like the Kappa statistics to show
 that each captures a different aspect of the performance.
 
 \section{Online Ensemble Methods}
+\label{sec:bg-ol-ensembles}
 
 Due to their approximate nature online learning models often demonstrate
 limited accuracy compared to their batch counterparts. Ensemble methods
@@ -242,6 +399,7 @@ parallel online boosting, while maintaining their guarantees.
 \end{algorithm}
 
 \section{Software}
+\label{sec:bg-ol-software}
 
 Compared to the multitude of options available for batch learning, \todo{Cite?} the availability
 of open-source software for online learning is relatively limited. In this section we will
