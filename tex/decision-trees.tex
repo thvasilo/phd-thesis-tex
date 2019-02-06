@@ -169,17 +169,34 @@ to the ensemble, chosen so that it minimizes an objective.
 We use the
 regularized objective formulation used
 in \cite{xgboost}, and follow their notation throughout our description of the algorithm.
-The objective function is shown in Eq. \ref{eq:gbt-objective}.
+The objective function is shown in Eq. \ref{eq:gbt-objective}
 
 \begin{equation}
 	\begin{split}
 	\mathcal{L}(\phi) = \sum_{i} l\left(\hat{y}_{i},y_{i}\right) + \sum_{k} \Omega\left(f_{k}\right) \\
-	\text{where} \Omega\left(f_{k}\right) = \gamma T + \frac{1}{2} \lambda \norm{w}^2
+	\text{where } \Omega\left(f_{k}\right) = \gamma T + \frac{1}{2} \lambda \norm{w}^2
 	\end{split}
 	\label{eq:gbt-objective}
 \end{equation}
 
-$l$ is a differentiable loss function and
+\noindent
+where $l$ is a differentiable loss function and $\Omega$ is a regularization term
+that penalizes complex models. The regularization term takes into consideration
+the number of leaves $T$ and the norm of the weights at the leaves $w$. This helps
+smooth the weights to avoid overfitting. This objective defined in XGBoost
+has then been used in follow-up GBT learning systems like LightGBM and 
+DimBoost \cite{lightgbm, dimboost}.  A note here is that XGBoost
+assumes that the loss function is twice differentiable in order
+to calculate the Hessian analytically for each loss function.
+However, as shown recently in \cite{accelerated-gb} it is possible
+to use Nesterov's first-order accelerated gradient descent method
+\cite{nesterov-book} to produce gradient boosting models of similar
+accuracy, while being much more sparse in the number of components.
+In distributed training this would have the added benefit of reducing
+the amount of data being communicated by half, as we'd only need to
+communicate first-order gradients and not Hessians, as we will explain
+in the following section.
+
 
 
 \subsubsection*{Training}
@@ -447,8 +464,3 @@ data point, in other words it has a cost of $\mathcal{O}(\log N!)$ to train N
 data points. In addition, the online version of the algorithm needs to maintain
 all data points in at the leafs in order to be be able to update the distributions.
 This makes its memory cost prohibitive for a streaming setting where with limited resources.
-
-
-
-\section{Inference}
-\label{sec:bg-dt-inference}
