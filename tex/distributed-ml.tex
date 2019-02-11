@@ -1,1 +1,191 @@
 \chapter{Parallel and Distributed Machine Learning}
+
+As the datasets available have grown, so has the need for methods that
+can scale and learn from massive data. With the slowdown of CPU frequency
+growth, the main avenue for better utilizing modern hardware is to make use
+of parallelism, whether that is in a single-worker (local) domain or distributed,
+making use of a cluster of computers to train models. In this chapter we
+will provide an introduction at the systems available that make
+parallel learning possible and efficient. We start by presenting the
+different parallelization paradigms available in Section \ref{sec:bg-ml-paradigms},
+continue by presenting the different methods of communicating in
+distributed machine learning in Section \ref{sec:bg-ml-communication},
+and finish the chapter by highlighting some challenges in
+distributed learning in Section \ref{sec:bg-ml-challenges}.
+For an in depth look into parallel and distributed Machine Learning (ML)
+system design we refer the reader to \cite{distributed-ml-design}.
+
+\section{Parallelization Paradigms}
+\label{sec:bg-ml-paradigms}
+
+In an abstract representation of any machine learning problem, we can separate
+two functional items: the data, and the model. The data refers to the potentially
+massive set of data from which we try to learn, be that a labeled dataset for
+supervised learning, or an unlabeled dataset from which we try to extract
+structure in unsupervised learning. The model refers to the approximate representation
+of the real-world process that we use to encode the information about the world,
+through the available data.
+
+These two separate items provide us with a clean separation of how to perform
+parallel learning: we can either try to parallelize our learning over the set
+of data, known as \emph{data-parallel} learning, or over different parts of
+our model, known as \emph{model-parallel} learning. Certain kinds of models
+may be more amenable to data or model parallelism. For example, training
+linear models using stochastic gradient descent lends itself well to
+data-parallel approaches \cite{dekel-optimal-distributed} while random
+forest (RF) models allow for easy model-parallel learning,
+since every tree in an RF can be grown independently.
+
+Finally, it is also possible to employ data and model parallelism simultaneously,
+often referred to as block-parallelism, as done by the Latent Dirichlet Allocation
+model of \cite{petuum}.
+
+In our work we employ data-parallel learning for Papers \conceptsicdmNum--\sessionlengthNum,
+model-parallel learning for Papers \uncertaintreesNum and \boostvhtNum, and
+block-parallel learning for \blockgbt. In the sequel we describe and provide
+examples of each learning approach.
+
+\subsection*{Data-parallel Learning}
+
+Data-parallel learning is the most commonly applied form of parallelism
+in machine learning models due to the base assumption of many ML models
+that the training data are independent and identically distributed (i.i.d.)
+\cite{distributed-ml-design}. When performing data-parallel training, we
+distribute the data over a set of worker, each of which trains the model
+on its own partition of the data. At the end of each iteration there is commonly one communication step
+to synchronize the models of each worker to avoid diverging models, although
+this requirement can be relaxed, for example for asynchronous gradient descent
+algorithms like Hogwild \cite{hogwild} or through the use of stale-synchronous
+communication~\cite{stale-sync-ps}.
+
+As \citet{distributed-ml-design} note, practically any ML algorithm that makes
+the i.i.d. data assumption and has an objective function that sums over
+the data indices $i$, can be made into a data-parallel algorithm. As a result,
+almost every model available in ML now has multiple data-parallel versions
+available. Data-parallel optimization algorithms include stochastic and batch gradient
+descent~\cite{dekel-optimal-distributed, parallel-sgd}, L-BFGS~\cite{lbfgs-large-scale, vw},
+ADMM~\cite{admm, admm-async}, and coordinate descent~\cite{rendle-distributed-cd, parallel-cd}.
+Data-parallel models exist for deep learning~\cite{large-scale-dl}, Latent Dirichlet Allocation (LDA)~\cite{parallel-lda},
+gradient boosted trees~\cite{xgboost, lightgbm}, collaborative filtering~\cite{koren-cf, parallel-cf}, Support Vector Machines~\cite{parallel-svm, psvm, parallel-svm-survey}, and Gaussian processes~\cite{gp-big-data, gp-distributed} among others,
+see \cite{parallel-ml-book} for a collection of approaches.
+
+\subsection*{Model-parallel Learning}
+
+While developing data-parallel version of existing algorithms is relatively straightforward
+due to the i.i.d. assumption, this doesn't apply to model-parallel algorithms. In this
+setting, we parallelize the work by working on different parts of the \emph{model}
+in parallel, rather than different partitions of data. The motivation is often
+high-dimensional data \cite{parallel-cd-l1}, or
+memory limitations: in order to achieve representations
+that can learn from massive data, some models, like LDA and deep networks, require
+models with up to trillions of parameters \cite{lightLDA, large-scale-dl}
+that cannot fit into the memory of one machine or GPU.
+
+The main challenge becomes
+that, unlike i.i.d. data, the parameters of most models are dependent on each
+other often through an explicit structure like a neural network or Bayesian network, or a
+sequential dependence, for example in additive models like gradient boosting \cite{esl}.
+Care needs to be taken therefore to ensure that models are kept consistent and do not
+diverge due to the limited view of the model each worker possesses.
+
+Commonly, the approach taken is to determine parts of of the model that are indeed
+independent and can be optimized in parallel. For example, \citet{parallel-cd-l1}
+present a parallel Coordinate Descent algorithm that updates at each iteration
+a random number, $P$, of coordinates in parallel. The authors prove that the number of coordinate updates
+that can occur in without divergence can be derived from the data and is therefore
+highly problem specific. This approach of making use of the \emph{structure} of
+the problem to avoid updates that interfere with each other, can also be applied
+in other models see \cite{model-parallel-learning} for a principled approach.
+Modeling this structure explicitly, Graphlab~\cite{graphlab, graphlab-distributed} presented a learning framework
+where models and data are represented in a graph-like structure that can reside in different
+nodes and updated in parallel, requiring communication only as the graph structure
+indicates. This approach has the limitation however that the models need to be
+possible to be represented in a graph structure, something which is not possible
+for many models.
+
+Finally we mention approaches that are both data and model parallel. These are
+cases where massive models are needed to be trained over massive datasets, for
+example in LDA or deep learning models \cite{large-scale-dl, lightLDA}. This kind of
+optimization requires a flexible communication paradigm that allows for efficient
+updates of parts of the model that may reside in different workers, from data
+that are also distributed. The Parameter Server architecture\cite{muPS} is
+allows for such flexible interactions and we describe it in the next
+section that focuses on the different communication patterns used
+in large-scale ML.
+
+\section{Distributed Communication in Machine Learning}
+\label{sec:bg-ml-communication}
+
+Initial distributed ML approaches like parallel Stochastic Gradient Descent
+\cite{parallel-sgd} eschewed communication until the very last step of the
+algorithm, however as \citet{dekel-optimal-distributed} show, this comes
+at a cost of the optimality of the solution. \citet{dekel-optimal-distributed}
+instead suggest a method that communicates the gradients for each batch and uses
+their average, leading to an asymptotically optimal algorithm for smooth
+convex loss functions. What this example demonstrates is the need for communication
+in ML models. In this section we will examine some of the approaches for distributed
+communication that have been employed in machine learning.
+
+Efficient distributed communication has been a focus in the HPC and distributed systems
+communities since their inception, we refer the reader to the monographs
+\cite{hpc-intro, distributed-systems-book, distributed-systems-programming, distributed-systems-computation} for thorough introductions.
+In the context of machine learning, the focus has been on ways to synchronize
+sets of parameters, commonly represented as vectors or matrices, over a network
+of computers. The dominant paradigms have been the use of collective communications
+like \emph{Allreduce}~\cite{allreduce}, the MapReduce programming paradigm~\cite{mapreduce},
+and the Parameter Server~\cite{muPS}.
+
+Allreduce is high-level communication primitive provided by distributed communication
+systems like the Message Passing Interface (MPI) protocol \cite{mpi} and the
+GPU-targeted NCCL\footnote{\url{https://github.com/NVIDIA/nccl}}. At the highest
+level, an allreduce operation on a vector of objects will apply an aggregation
+function on on the copy of the vector on each worker in a cluster and communicate
+the results so that at the end of the operation all workers end up with the same,
+aggregated, copy of the vector. As a high level operation there have been
+many different implementation suggested for allreduce, like the traditional
+binary tree reduction algorithm, ring reduce, and butterfly reduce~\cite{allreduce}.
+The allreduce operation offers a simple ``interface'' as what's needed to communicate
+the vectors are only the aggregation function, and all workers share the same role.
+This simplifies the programming burden significantly, however limits the expressivity
+of the algorithm. For algorithms where the computational load cannot be easily divided between
+workers, for example the existence of high-frequency words in LDA\cite{lightLDA}, allreduce can result
+in imbalances between the workers, leading to increased runtime\cite{staggler-ml, stale-sync-ps}.
+
+
+The MapReduce programming paradigm offered some more flexibility in terms of the
+programming model, in which the base primitives are a map operation that is applied
+locally at worker on the input, and a reduce operation that aggregates the results
+from worker that correspond to the same key. Developers can assign custom partitioners
+to have more flexible communication, however the communication pattern is still rigid.
+The use of disk-based aggregations of MapReduce are not a good fit for the iterative
+nature of most ML algorithms and often lead to increased runtime\cite{distributed-ml-design}.
+
+A more flexible paradigm is the Parameter Server~\cite{muPS} (PS). In the PS programming
+paradigm, machines assume the role of \emph{workers} or \emph{servers}. Workers are
+responsible for the computation of parameter changes, for example by iterating through
+their local partition of the the data to collect gradient updates. Servers are responsible
+for the storage and update of the parameters.
+Similarly to a distributed key-value store~\cite{dynamo}, the workers in the PS programming
+model have two operations available, \emph{push} that allows them to push a set of
+parameters to the servers, and \emph{pull}, that retrieves a set of parameters.
+These push and pull operations are take as input a \emph{key} that determines
+the server that is responsible for that set of parameters, thereby allowing
+one-to-one communication between servers and workes.
+
+By allowing the parameters themselves to be
+distributed over a cluster of computers, PS allows for intuitive implementation of
+model-parallel and block-parallel solutions as exemplified in \cite{muPS, lightLDA}.
+The Parameter Server also makes it easier to relax the strict synchronization
+barriers that allreduce approaches have, for example by allowing different workers
+to work on different iterations of problem, with a bound on the discrepancy between
+the fastest and slowest worker that still allows for provable convergence\cite{stale-sync-ps}.
+
+The flexibility of the PS comes at cost of more complex programming on the developer
+side, compared to an allreduce operation, as the developer needs to determine the
+keys that correspond to the parameters of interest they would like to update or
+retrieve. The PS paradigm lends itself very well to cases where updates to the model
+are local, i.e. they only touch small parts of the model. This ensures that the communication
+necessary for the model updates remains small~\cite{muPS}.
+
+\section{Distributed Learning Challenges}
+\label{sec:bg-ml-challenges}
