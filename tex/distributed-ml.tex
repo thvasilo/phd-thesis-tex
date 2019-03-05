@@ -46,6 +46,7 @@ block-parallel learning for \blockgbt. In the sequel we describe and provide
 examples of each learning approach.
 
 \subsection*{Data-parallel Learning}
+\label{sec:bg-data-parallel}
 
 Data-parallel learning is the most commonly applied form of parallelism
 in machine learning models due to the base assumption of many ML models
@@ -149,16 +150,18 @@ the vectors are only the aggregation function, and all workers share the same ro
 This simplifies the programming burden significantly, however limits the expressivity
 of the algorithm. For algorithms where the computational load cannot be easily divided between
 workers, for example the existence of high-frequency words in LDA\cite{lightLDA}, allreduce can result
-in imbalances between the workers, leading to increased runtime\cite{staggler-ml, stale-sync-ps}.
+in imbalances between the workers, leading to increased runtime\cite{straggler-ml, stale-sync-ps}.
 
 
-The MapReduce programming paradigm offered some more flexibility in terms of the
+The MapReduce programming paradigm \cite{mapreduce} offered some more flexibility in terms of the
 programming model, in which the base primitives are a map operation that is applied
-locally at worker on the input, and a reduce operation that aggregates the results
-from worker that correspond to the same key. Developers can assign custom partitioners
+locally at each worker on the input, and a reduce operation that aggregates the results
+from workers that correspond to the same key. Developers can assign custom partitioners
 to have more flexible communication, however the communication pattern is still rigid.
-The use of disk-based aggregations of MapReduce are not a good fit for the iterative
-nature of most ML algorithms and often lead to increased runtime\cite{distributed-ml-design}.
+The use of disk-based aggregations for MapReduce are not a good fit for the iterative
+nature of most ML algorithms and often leads to increased runtime\cite{distributed-ml-design}.
+In-memory data processing systems based on MapReduce-like computation, like Apache Spark \cite{spark}
+suffer from similar issues.
 
 A more flexible paradigm is the Parameter Server~\cite{muPS} (PS). In the PS programming
 paradigm, machines assume the role of \emph{workers} or \emph{servers}. Workers are
@@ -189,3 +192,39 @@ necessary for the model updates remains small~\cite{muPS}.
 
 \section{Distributed Learning Challenges}
 \label{sec:bg-ml-challenges}
+
+The challenges in distributed learning stem from the need to synchronize the solutions of different workers
+after each iteration,
+as mentioned in Section \ref{sec:bg-data-parallel}. This model is commonly referred to as
+Block Synchronous Parallel (BSP).
+In a shared cluster environment a common issue arising is the existence of ``stragglers'', that is,
+workers that fall behind in their computation of a particular iteration of an algorithm, causing
+the whole system to stall as other workers have to wait for them to finish. Depending on the reliance
+of the model on a synchronized solution, this can have more or less adverse effects, see
+\cite{straggler-ml} for some more background on the problem and proposed solutions.
+
+The aforementioned Hogwild optimization \cite{hogwild} and to a larger degree the stale-synchronous
+parameter server (SSP) \cite{stale-sync-ps} were designed to counter-act the effect of stragglers.
+SSP allows for some ``slack'' between the iteration at which different workers can be. In a gradient
+descent setting, this would mean that as workers iterate through their partition of the data and move
+on to the next iteration, they are allowed to fall behind, such the fastest worker is at most
+$s$ iterations ahead of the slowest worker, where $s$ is called the \emph{staleness threshold}.
+Unlike async solutions like Hogwild, \citet{stale-sync-ps} are able to give strong convergence
+guarantees for SSP and show how async algorithms can lead to slow convergence in the presence of stragglers.
+
+Another consideration for the design of distributed learning systems is the
+limited network communication available, a problem attenuated in shared clusters,
+where many applications are competing for resources, and cloud environments.
+Since network communication is necessary to synchronize the models, creating
+communication-efficient algorithms has become a heavily research are recently,
+we refer the reader to \cite{optimization-communication-complexity} for an in-depth
+look at the communication costs of distributed learning algorithms.
+Systems like the parameter server have been developed with the aim of reducing communication \cite{muPS}
+at the systems level,
+while specialized algorithms for optimization like \cite{cocoa} focus on local computation
+in order to reduce the amount of communication necessary. Other approaches include making use
+of information theory and codes to speed up learning \cite{distributed-ml-codes} and gradient
+compression \cite{gradient-compression}.
+In our work on \blockgbt, we take advantage of data sparsity to create efficient representation
+and reduce the communication cost distributed gradient boosted tree training by several orders
+of magnitude.
