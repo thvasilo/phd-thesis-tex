@@ -1,5 +1,94 @@
 \chapter{Conclusion}
 
+In this thesis we have proposed efficient algorithms for graph node
+similarity and decision tree learning. Our goal was to create
+algorithms that scale out regardless of input size and to do so
+we have used three design goals: reduce the amount of computation
+necessary to produce a result, reduce the amount of communication
+during distributed learning, and bound the memory use of the algorithms,
+making it possible to train them on unbounded datasets.
+
+In this chapter we conclude this dissertation, by first providing a
+summary and critical view of the results, and putting our research
+in context with the state of the art.
+We close the chapter with potential future work directions and open
+problems.
+
 \section{Summary of Results}
 
+We first proposed an approximate way to to calculate similarities between
+nodes in a graph. Our method dramatically reduces the computational cost
+by localizing computation in node neighborhoods, and taking advantage
+of the sparse graph structure to further optimize the computation with controllable
+error. We demonstrated the generality of the approach in several domains and presented
+qualitative as well as quantitative evidence of its accuracy. In addition we demonstrate
+the scalability of the algorithm by training on one of the biggest text datasets
+available in minutes.
+
+We then presented a real-world use case of music streaming session length analysis and prediction,
+which demonstrated the unique characteristics of music streaming listeners, and developed
+an appropriate predictive model. This work acts as a motivation for our follow-up work
+on decision tree learning.
+
+For our first contribution to decision tree learning, we develop an algorithm
+to learn boosted online decision trees in parallel, achieving significant
+learning speedups while maintaining the correctness guarantees of the
+underlying online boosting algorithms. Our approach scale almost linearly,
+for both weak and strong scalability and we clearly demonstrate the gains
+in terms of accuracy over single trees and speed compared to single-threaded
+approaches.
+
+Our next contribution again deals with online decision tree learning,
+and we presented two algorithms to extract uncertainty estimates
+for the predictions of ensemble of online regression trees.
+We use approximate data structures and online learners to
+adapt two batch algorithms to the online domain, bounding
+their computational and memory use and making it possible
+to train the algorithm on unbounded data. We demonstrate the
+favorable performance of the algorithm against the state of
+the art in terms of accuracy, and an order of magnitude improvement
+in the runtime.
+
+Finally we presented a new algorithm for distributed gradient boosted tree
+learning that enable a new dimension of scalability, allowing for scale-out
+across both the data point and feature dimensions. We make use the Quickscorer
+algorithm to achieve efficient block-distributed prediction, and make use
+of the parameter server's flexibility to exploit data sparsity and achieve
+order of magnitude improvements in the communication cost of the training process.
+
 \section{Future Directions}
+
+We identify several aspects of work that can be expanded upon and improved,
+targeting specific limitations of the model. For our work on graph node similarity
+our next targets are to create hierarchical structures of concepts, thereby creating
+composable representations in an unsupervised manner. We would also like to create
+a generalized algorithm for evaluating graph node similarity from a stream of edges,
+that form the graph in real time. Finally the calculation of similarities between
+nodes in the graph that are more than two hops away is currently, by design, not included
+in the mode. However, there could be a way to calculate these by following paths in
+the resulting similarity graph. An efficient algorithm to do that would generalize
+the problem the algorithm is able to solve.
+
+For our work parallel boosted online trees, one limitation is for datasets with
+a limited amount of features, which would limit the potential speedup of the
+algorithm.
+An interesting direction to explore is to
+create efficient data-parallel and block-parallel algorithms that might sacrifice
+the correctness guarantees of our feature-parallel algorithm for more available
+parallelism.
+
+For our work in the estimation of uncertainty in online decision trees, our foremost
+priority would be the theoretical justification of the validity of the produced intervals,
+i.e. to prove that, like the batch QRF and conformal prediction, the produced intervals
+are consistent estimators given the requested significance level. The ability to
+deal with concept drift at the meta-algorithm level would also be welcome, instead
+of relying on the underlying weak learner to provide this capability.
+
+Finally for our work on block-distributed gradient boosted trees one priority is to
+improve the algorithm's performance for datasets with low sparsity. The overhead
+introduced by the sparse representations and distributed communication systems we use could be mitigated by,
+for example, choosing the representation to use (sparse or dense) based on the
+characteristics of the data, which can be determined in the initial pass over the
+data during the creation of the feature value histograms. In addition we would
+like to integrate the approach in an end-to-end learner like XGBoost to be able
+to compare its performance with other state-of-the-art systems like LightGBM.
