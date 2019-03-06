@@ -412,7 +412,7 @@ probability of a split being optimal, the authors again use the Hoeffding bound
 on the SDR ratio of the two best splits which will be in $[0, 1]$ range.
 The linear models at the leaves are perceptron models, updated using stochastic
 gradient descent.  Finally, FIMT includes a change detection system in order to
-adapt to concept drift \todo{Make use we've defined concept drift before.}
+adapt to concept drift \todo{Make sure we've defined concept drift before.}
 based on the Page-Hinckley change detection test~\cite{ph-test, ph-test2}.
 
 \todo{Online RFs?}
@@ -464,3 +464,7 @@ data point, in other words it has a cost of $\mathcal{O}(\log N!)$ to train N
 data points. In addition, the online version of the algorithm needs to maintain
 all data points in at the leafs in order to be be able to update the distributions.
 This makes its memory cost prohibitive for a streaming setting where with limited resources.
+
+In our work we use Mondrian Forests as the state-of-the-art comparison in \uncertaintrees
+and show that we are able to achieve similar accuracy with an order of magnitude reduction
+in runtime.
