@@ -200,7 +200,7 @@ data efficiently. In particular we can identify different kinds of optimizations
 	\item \emph{Adapting the algorithm to the data to improve accuracy and efficiency.} In many problems
 	we have prior information about the data structure. For example many real-world graphs exhibit
 	power-law degree distribution \cite{small-world}, many user interaction metrics are power-law
-	distributed \cite{phonecalls} or exhibit extreme sparsity \cite{esl}. This properties can
+	distributed \cite{phonecalls, faloutsos1999internet, barabasi-small-world, click-stream-power-law} or exhibit extreme sparsity \cite{esl}. This properties can
 	be exploited to reduce the computational and memory cost of learning algorithms as well as
 	improve their accuracy. In Chapter \ref{ch:concepts} we rely on the power-law degree
 	distribution of many real-world graphs to provide approximations with measurable error,
@@ -209,8 +209,6 @@ data efficiently. In particular we can identify different kinds of optimizations
 	In Chapter \ref{ch:boosted-trees} we make use of data sparsity to dramatically reduce
 	the communication cost of distributed algorithms for boosted trees.
 \end{itemize}
-
-
 
 \section{Contributions}
 
