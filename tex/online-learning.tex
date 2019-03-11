@@ -6,30 +6,36 @@ setting for Papers \boostvhtNum and \uncertaintreesNum. We start by providing an
 overview of the kinds of models available in Section \ref{sec:bg-ol-models}, present
 the problem of concept drift and proposed solutions in Section \ref{sec:bg-ol-adapation},
 and identify issues and solutions for evaluation in Section \ref{sec:bg-ol-evaluation}.
-Since our work focuses on ensemble methods we present the approaches in Section
+Since our work focuses on ensemble methods we present the online ensemble algorithms in Section
 \ref{sec:bg-ol-ensembles} and finish the chapter with a look at the available
 open-source software for online learning in Section \ref{sec:bg-ol-software}.
 
 \section{Models}
 \label{sec:bg-ol-models}
 
-As with batch learning there exists of variety of models in the online
+As with batch learning, there exists of variety of models in the online
 learning domain. Usually these are models that were first developed
 for the batch setting and subsequently adapted to online learning.
-In this section we focused on supervised learning methods for
+In this section we focus on supervised learning methods for
 classification and regression, and explore different
 learning representations to demonstrate the variety of
-methods available for online learning, following the
+models available for online learning, following the
 classification in \cite{onlineML}. For a comprehensive
 introduction to the various models available in streaming
 learning we refer the reader to \cite{moa-book}.
+An important aspect of online learning that we do not cover in this chapter is learning
+under concept drift, that is, when the underlying distribution
+of the data changes during learning. We refer the reader
+to the surveys \cite{concept-drift-survey-indre, concept-drift-survey-gama}
+for in-depth looks at the topic.
 
 \subsection*{Instance Based Learning}
 One of the simplest and most intuitive methods in machine learning
 is Instance Based Learning (IBL), which usually takes the form of
-nearest neighbor approach. IBL exemplifies many characteristics
+a nearest neighbor model. IBL exemplifies many characteristics
 that make it a good candidate for online learning, and the
-IBLStreams work of \cite{ibl-streams} delves into these.
+IBLStreams work of \citet{ibl-streams} demonstrates how these
+can put to use to create an efficient online learning model.
 In Instance Based Learning, we make predictions based on the instances themselves, unlike
 model-based approaches that try to extract a model (function) from the
 data. IBL algorithms are inherently incremental, and can be faster to
@@ -39,7 +45,7 @@ massive streaming data scenario can be infeasible. To deal with this
 issue IBLStreams will evict the oldest examples once an upper limit on
 the size is hit. Second, inference can be much slower as it requires
 finding the k nearest neighbors to the incoming dataset, which even when
-using efficient indexing structures (like LSH) can be very costly
+using efficient indexing structures (like Locality Sensitive Hashing) can be very costly
 compared to a model-based prediction, e.g. from a linear model. The
 authors suggest that IBL makes more sense in scenarios where updates are
 often but queries infrequent. In terms of drift adaptation IBLs can have
@@ -407,7 +413,7 @@ of open-source software for online learning is relatively limited. In this secti
 mention the most popular libraries for online learning, and point out the ones we have used to develop
 our work.
 
-Perhaps the original online learning library released is the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the VFDT algorithm.
+Perhaps the first online learning library released is the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the VFDT algorithm.
 It includes the VFDT and its variations, as well as data pre-processing tools.
 
 One of the most established open-source frameworks for online learning is MOA, which stands

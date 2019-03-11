@@ -1,12 +1,12 @@
 \chapter{Parallel and Distributed Machine Learning}
 \label{ch:bg-parallel-ml}
 
-As the datasets available have grown, so has the need for methods that
+As the size of the datasets to learn from have grown, so has the need for methods that
 can scale and learn from massive data. With the slowdown of CPU frequency
 growth, the main avenue for better utilizing modern hardware is to make use
-of parallelism, whether that is in a single-worker (local) domain or distributed,
+of parallelism, whether that is in a single-worker, or distributed,
 making use of a cluster of computers to train models. In this chapter we
-will provide an introduction at the systems available that make
+will provide an introduction to the systems that make
 parallel learning possible and efficient. We start by presenting the
 different parallelization paradigms available in Section \ref{sec:bg-ml-paradigms},
 continue by presenting the different methods of communicating in
@@ -42,7 +42,7 @@ often referred to as block-parallelism, as done by the Latent Dirichlet Allocati
 model of \cite{petuum}.
 
 In our work we employ data-parallel learning for Papers \conceptsicdmNum--\sessionlengthNum,
-model-parallel learning for Papers \uncertaintreesNum and \boostvhtNum, and
+model-parallel learning for Papers \boostvhtNum and \uncertaintreesNum, and
 block-parallel learning for \blockgbt. In the sequel we describe and provide
 examples of each learning approach.
 
@@ -53,7 +53,7 @@ Data-parallel learning is the most commonly applied form of parallelism
 in machine learning models due to the base assumption of many ML models
 that the training data are independent and identically distributed (i.i.d.)
 \cite{distributed-ml-design}. When performing data-parallel training, we
-distribute the data over a set of worker, each of which trains the model
+distribute the data over a set of workers, each of which trains the model
 on its own partition of the data. At the end of each iteration there is commonly one communication step
 to synchronize the models of each worker to avoid diverging models, although
 this requirement can be relaxed, for example for asynchronous gradient descent
@@ -75,7 +75,7 @@ see \cite{parallel-ml-book} for a collection of approaches.
 
 While developing data-parallel version of existing algorithms is relatively straightforward
 due to the i.i.d. assumption, this doesn't apply to model-parallel algorithms. In this
-setting, we parallelize the work by working on different parts of the \emph{model}
+setting, we parallelize the problem by working on different parts of the \emph{model}
 in parallel, rather than different partitions of data. The motivation is often
 high-dimensional data \cite{parallel-cd-l1}, or
 memory limitations: in order to achieve representations
@@ -94,18 +94,19 @@ Commonly, the approach taken is to determine parts of of the model that are inde
 independent and can be optimized in parallel. For example, \citet{parallel-cd-l1}
 present a parallel Coordinate Descent algorithm that updates at each iteration
 a random number, $P$, of coordinates in parallel. The authors prove that the number of coordinate updates
-that can occur in without divergence can be derived from the data and is therefore
+that can occur in parallel without divergence can be derived from the data and is therefore
 highly problem specific. This approach of making use of the \emph{structure} of
 the problem to avoid updates that interfere with each other, can also be applied
-in other models see \cite{model-parallel-learning} for a principled approach.
+in other models, see \citet{model-parallel-learning} for a principled approach
+to the problem.
 Modeling this structure explicitly, Graphlab~\cite{graphlab, graphlab-distributed} presented a learning framework
 where models and data are represented in a graph-like structure that can reside in different
 nodes and updated in parallel, requiring communication only as the graph structure
 indicates. This approach has the limitation however that the models need to be
 possible to be represented in a graph structure, something which is not possible
-for many models.
+for many categories of algorithms.
 
-Finally we mention approaches that are both data and model parallel. These are
+Finally, we mention approaches that are both data and model parallel. These are
 cases where massive models are needed to be trained over massive datasets, for
 example in LDA or deep learning models \cite{large-scale-dl, lightLDA}. This kind of
 optimization requires a flexible communication paradigm that allows for efficient
@@ -141,12 +142,12 @@ Allreduce is high-level communication primitive provided by distributed communic
 systems like the Message Passing Interface (MPI) protocol \cite{mpi} and the
 GPU-targeted NCCL\footnote{\url{https://github.com/NVIDIA/nccl}}. At the highest
 level, an allreduce operation on a vector of objects will apply an aggregation
-function on on the copy of the vector on each worker in a cluster and communicate
+function on the copy of the vector on each worker in a cluster and communicate
 the results so that at the end of the operation all workers end up with the same,
 aggregated, copy of the vector. As a high level operation there have been
-many different implementation suggested for allreduce, like the traditional
-binary tree reduction algorithm, ring reduce, and butterfly reduce~\cite{allreduce}.
-The allreduce operation offers a simple ``interface'' as what's needed to communicate
+many different implementations suggested for allreduce, like the traditional
+binary tree reduction algorithm, ring reduce, and butterfly reduce algorithms~\cite{allreduce}.
+The allreduce operation offers developers a simple ``interface'', as what is needed to communicate
 the vectors are only the aggregation function, and all workers share the same role.
 This simplifies the programming burden significantly, however limits the expressivity
 of the algorithm. For algorithms where the computational load cannot be easily divided between
@@ -172,9 +173,9 @@ for the storage and update of the parameters.
 Similarly to a distributed key-value store~\cite{dynamo}, the workers in the PS programming
 model have two operations available, \emph{push} that allows them to push a set of
 parameters to the servers, and \emph{pull}, that retrieves a set of parameters.
-These push and pull operations are take as input a \emph{key} that determines
+These push and pull operations take as input a \emph{key} that determines
 the server that is responsible for that set of parameters, thereby allowing
-one-to-one communication between servers and workes.
+one-to-one communication between servers and workers.
 
 By allowing the parameters themselves to be
 distributed over a cluster of computers, PS allows for intuitive implementation of
@@ -210,22 +211,22 @@ SSP allows for some ``slack'' between the iteration at which different workers c
 descent setting, this would mean that as workers iterate through their partition of the data and move
 on to the next iteration, they are allowed to fall behind, such the fastest worker is at most
 $s$ iterations ahead of the slowest worker, where $s$ is called the \emph{staleness threshold}.
-Unlike async solutions like Hogwild, \citet{stale-sync-ps} are able to give strong convergence
-guarantees for SSP and show how async algorithms can lead to slow convergence in the presence of stragglers.
+Unlike asynchronous solutions like Hogwild, \citet{stale-sync-ps} are able to give strong convergence
+guarantees for SSP and show how asynchronous algorithms can lead to slow convergence in the presence of stragglers.
 
 Another consideration for the design of distributed learning systems is the
 limited network communication available, a problem attenuated in shared clusters,
-where many applications are competing for resources, and cloud environments.
+where many applications are competing for resources, and in cloud environments.
 Since network communication is necessary to synchronize the models, creating
-communication-efficient algorithms has become a heavily research are recently,
+communication-efficient algorithms has become a heavily researched area recently,
 we refer the reader to \cite{optimization-communication-complexity} for an in-depth
 look at the communication costs of distributed learning algorithms.
 Systems like the parameter server have been developed with the aim of reducing communication \cite{muPS}
 at the systems level,
-while specialized algorithms for optimization like \cite{cocoa} focus on local computation
+while specialized algorithms for optimization like CoCoA \cite{cocoa} focus on local computation
 in order to reduce the amount of communication necessary. Other approaches include making use
 of information theory and codes to speed up learning \cite{distributed-ml-codes} and gradient
 compression \cite{gradient-compression}.
-In our work on \blockgbt, we take advantage of data sparsity to create efficient representation
+In our work on \blockgbt, we take advantage of data sparsity to create efficient representations
 and reduce the communication cost distributed gradient boosted tree training by several orders
 of magnitude.

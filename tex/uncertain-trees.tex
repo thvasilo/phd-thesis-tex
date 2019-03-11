@@ -229,8 +229,8 @@ Depending on the cost of a mistake we might require different levels of confiden
 in our predictions. Thereby it's important to measure the performance of the 
 algorithms over a range of different significance levels. The results are listed
 in Table \ref{tab:uncertain-significance} where we can see that Mondrian Forests cannot maintain the
-error guarantees above 90\% confidence, and that OnlineQRF provides the best
-compromise between maintaining the error below the requested level, while
+error guarantees above 80\% confidence, and that OnlineQRF provides the best
+compromise between maintaining the error rate below the requested level, while
 keeping the produced intervals informative.
 
 \begin{table}
@@ -254,7 +254,7 @@ keeping the produced intervals informative.
 		& RIS &   0.28 &   0.37 &   0.57 &   0.622 &   0.944 \\
 		\bottomrule
 	\end{tabular}
-	\caption{MER and RIS for different significance levels. The target MER is
+	\caption{MER and RIS for different significance levels. The MER should be at most
 		$\significance$ where $\significance$ the significance level.}
 	\label{tab:uncertain-significance}
 \end{table}

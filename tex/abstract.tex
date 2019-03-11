@@ -2,13 +2,13 @@
 
 \begin{abstract}
 Machine learning algorithms are now being deployed in practically all
-areas of our lives. Part of this success of machine learning can be
-attributed to the ability to learn more complex representations from
+areas of our lives. Part of their success can be
+attributed to the ability to learn complex representations from
 massive datasets. As this proliferation continues, the ability for algorithms
-to adapt to a changing environment and deal with uncertainty, becomes
-increasingly important. These challenges need to be met counter to the
-diminishing increase in clock speeds observed recently, leading naturally to solutions
-that need to be parallelizable.
+to adapt to a changing environment and deal with uncertainty becomes
+increasingly important. These challenges need to be met despite the
+diminishing increases in clock speeds observed recently, leading naturally to solutions
+that need to be efficient and parallel.
 
 In this thesis we develop scalable machine learning algorithms, with a focus on
 efficient, online, and distributed computation. We make use of \emph{approximations}
@@ -17,18 +17,21 @@ to dramatically reduce the computational cost of exact algorithms, we develop
 under a tight computational budget, and develop \emph{parallel and distributed} algorithms
 to ensure that our algorithms can scale to the massive datasets available today.
 
-First, we propose a scalable algorithm for vertex similarity calculation. We demonstrate
+We first propose a scalable algorithm for vertex similarity calculation and concept
+discovery. We demonstrate
 its applicability to multiple domains and demonstrate its scalability by training on
 one of the largest text corpora available in the order of minutes.
 Then, motivated by a real-world use case of predicting the session length in media streaming, we propose improvements to several aspects of learning
 with decision trees. We propose two algorithms to estimate the uncertainty in the predictions
-online random forests. We show that our approach can achieve better accuracy than the
+of online random forests. We show that our approach can achieve better accuracy than the
 state of the art while being an order of magnitude faster to run.
-We propose a parallel and distributed online tree boosting algorithm
-that maintains the correctness guarantees of serial algorithms while providing speedups
-of x45 on average. Finally we propose an algorithm that allows for gradient boosted trees training to be
+We then propose a parallel and distributed online tree boosting algorithm
+that maintains the correctness guarantees of serial algorithms while providing an order of
+magnitude speedups on average. Finally, we propose an algorithm that allows for gradient boosted trees training to be
 distributed across both the data point and feature dimensions, and show that we can
-achieve communication savings of several order of magnitude for sparse datasets.
+achieve communication savings of several orders of magnitude for sparse datasets
+compared to existing approaches that can only distribute the computation across the
+data point dimension and use dense communication.
 \end{abstract}
 
 

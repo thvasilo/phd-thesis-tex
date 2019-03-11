@@ -11,17 +11,15 @@ bridges deep learning with out work to extract visual concepts from images.
 
 This work tackles the general problem of determining the similarity between \emph{objects}
 in a data set, which can take many forms: cosine similarity between
-items embedded in a low-dimensional representation \cite{word2vec}, ...
-\todo{A second thing here}, or as done
-in this work, by modeling the problem as graph similarity calculation.
-The use of the generic \emph{object} term here is intentional, as our method is domain-agnostic
-and can be applied in a variety of domains where a meaningful measure of correlation
-between objects can be derived. In the paper we present examples from the linguistic,
-music, and molecular biology domains, and we provide an additional example in this thesis
+items embedded in a low-dimensional representation \cite{word2vec}, metric learning\cite{metric-learning-survey}, or, as done
+in this work, by modeling the problem as graph vertex similarity calculation.
+We use the generic term \emph{object} here to emphasize the generality of our
+approach, made possible by modeling the problem as vertex similarity calculation. In the paper we present examples from the linguistic,
+music, and molecular biology domains, and we provide an additional example in this dissertation
 using images as input, in Section \ref{sec:concepts-openimages}.
 
 In our approach we model the objects as nodes in graph and their interactions as edges,
-weighted by a measure of correlation between the objects. In language for example, the
+initially weighted by a measure of correlation between the objects. In text for example, the
 nodes would be words and the edges could be weighted by their mutual information \cite{mutual-information-nlp}.
 
 However, the computation of all-to-all similarities in a graph can quickly become
@@ -82,7 +80,8 @@ concept such as ``cities'', or words with the same syntactic and semantic purpos
 groups of adverbs. To create these groups we apply a community detection method on top
 of the similarity graph. Because the similarity graph itself can be large, we develop
 a scalable approach which is based on the speaker-listener label propagation algorithm
-(SLPA) \cite{slpa}. \todo{Do we explain community detection and label propagation here?}
+(SLPA) \cite{slpa}. \todo{Do we explain community detection and label propagation here? Do we need to
+include it in the BG?}
 
 \section{Main Findings}
 

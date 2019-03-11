@@ -41,10 +41,12 @@ We provide algorithms that make block-distributed training feasible and communic
 \label{sec:boostvht-method}
 
 In \boostvht we make parallel online boosting possible, while maintaining the
-correctness of the online boosting algorithms, by using feature-parallel. 
+correctness of the online boosting algorithms, by using model-parallel learning
+instead of the data-parallel approaches used in the batch setting.
 We make use of the Vertical Hoeffding Tree (VHT) algorithm \cite{kourtellis2016vht} which is a model-parallel
 extension of the online Hoeffding tree algorithm \cite{vfdt}, often referred to as
-Very Fast Decision Tree (VFDT)\todo{Make sure we have talked about the VFDT in the background}.
+Very Fast Decision Tree (VFDT).
+We provided a description of the VFDT algorithm in Section \ref{sec:bg-dt-online-trees}.
 The VFDT algorithm will sort instances down the tree and update the statistics for the
 leaf the instance ends up in. This separation of duties allows for the scalable design of
 VHT: the algorithm uses two components, one called the \emph{model aggregator}
@@ -57,11 +59,12 @@ The model aggregator will periodically query the local statistics to check if we
 collected enough information to split the leaf with high confidence, as done in the
 original VFDT.
 
-Our method makes use of the VHT,
-and proposes optimizations that make the learning process efficient in a distributed
+\subsection*{Optimizations}
+
+Our method proposes optimizations that make the learning process efficient in a distributed
 setting. We use a design that is similar to the original VHT in that we maintain
 two main components, one model aggregator and local statistics. However, our model
-aggregator hosts a sequential chain of VHT models, though which we pass each example.
+aggregator hosts a sequential chain of VHT models, through which we pass each example.
 This design allows us to maintain the sequential nature of the boosting algorithm,
 and as a result the guarantees of any online boosting algorithm, while performing
 the training in parallel and asynchronously in a set of local statistics workers.
@@ -71,16 +74,17 @@ characteristics for distributed boosting. First, we design our local statistics
 so that the same worker can host statistics from multiple member of the ensemble.
 This enables to decouple the level of parallelism from the number of learners
 in the ensemble, separating the algorithm's functional (speedup) and non-functional
-(accuracy) constraints.
+(accuracy) aspects.
 Second, this enables us to host the statistics for a range of features on the same
-worker, across all the ensemble. This makes our communication pattern efficient:
+worker, across the ensemble. This makes our communication pattern efficient:
 We only need to send $p$  messages per instance, where $p$ is the chosen
 parallelism level, compared to sending $m$ messages, where $m$ the
 number of features. This will dramatically
-reduce the number of messages sent, since we expect $m \gg p$. In addition, compared to existing
+reduce the number of messages sent, since we $m \gg p$ in the high-dimensional
+settings we are focusing on. In addition, compared to existing
 parallel boosting methods like AdaBoost.PL \cite{adaboost-pl} that need to communicate the complete
 models between update, we only need to communicate the split decisions which are
-much more compact.
+much more compact (3 floating point values instead of a complete tree data structure).
 Finally, our approach allows us to send each attribute slice only once to
 each worker, as it suffices for each subsequent learner after the first
 to only send their updated weight. This brings a communication reduction
@@ -141,8 +145,7 @@ however can only eliminate leafs that are children of internal nodes that corres
 to the features available at that worker. To fully determine the output for each
 data point, the workers that hold data for the same horizontal slice will need
 to aggregate the bit strings for each data point. We do this by utilizing the
-parameter server \cite{muPS} architecture\todo{Should have introduced the PS now, and
-	esp. the server/worker concepts}: Each server is responsible for a
+parameter server \cite{muPS} architecture: Each server is responsible for a
 one horizontal slice of the data. The workers that hold the different parts of
 a horizontal slice, all send their bit-strings to the same server.
 The server then aggregates the partial bit-strings using a simple bit-wise \AND to determine the exit
@@ -171,9 +174,9 @@ as used in Chapter \ref{ch:uncertain-trees} for OnlineQRF. We choose a the numbe
 $B$ we want to examine for each feature, and create equi-weight buckets for each feature
 by iterating through the complet dataset. These calculated independently at each worker
 and are then aggregated across the cluster to get the combined CDF for each feature.
-In this example say we have two buckets:
+In this example say we have two buckets for each feature:
 $f_1: \{[0.0, 1.0), [1.0, 5.0)\}$ and $f_2:\{ [0.0, 5.0), [5.0, 10.0)\}$.
-Then, for this leaf, the feature histogram for $f_1$ would be $\{3.5, 0.5\}$ and for $f_2$
+Then, for this leaf, the gradient histogram for $f_1$ would be $\{3.5, 0.5\}$ and for $f_2$
 it would be $\{0.0, 3.5 + 0.5\}$, since both data points have values for $f_2$ that fall
 in the second bucket, $[5.0, 10.0)$, of the gradient histogram.
 
@@ -193,7 +196,7 @@ datasets with millions of features.
 Block-distribution introduces another level of complexity into this operation, as
 in that case, no worker has a complete view of any data point. Each worker gets one block,
 that is, a horizontal \emph{and} vertical slice of the data. If we think of the complete
-gradient histograms as a tensor of dimensions $|L| \times |F| \times B$, each worker is
+gradient histograms as a tensor of dimensions $|L| \times |F| \times B$, each worker
 will populate a part of this tensor, across the $L$ and $B$ dimensions, but limited to a specific
 subset of $F$. In \blockgbt, we use a sparse representation of this tensor at each worker, which allows
 us to eliminate the extraneous communication described above. Our experiments show
