@@ -17,7 +17,7 @@ hardware architectures. As CPU clock speed increases have stalled, developers
 and algorithm designers have turned to parallelism as a means of
 extracting more performance out of existing hardware.
 For gathering and processing the massive datasets available today,
-shared-nothing clusters of commodity machine have risen to
+shared-nothing clusters of commodity machines have risen to
 be the dominant choice in the industry due to both locality
 in terms of taking the computation to an already distributed
 dataset, as well as cost-effectiveness. These distributed
@@ -30,9 +30,9 @@ is learning at the edge on networks of IoT devices or federated
 learning with the intent of protecting user privacy, there has
 been an increasing demand for algorithms that can be trained
 with bounded compute and memory resources.
-These use-cases also highlight another challenge in learning
-in a constantly evolving environment, where traditional batch
-models trained on historical data will under-perform as the
+These use-cases also highlight another challenge which is learning
+in a constantly evolving environment. Traditional batch
+models trained on historical data can perform sub-optimally here as the
 relationships between the features and dependent evolve.
 %Online learning under a tight computational budget is the challenge
 %of streaming learning, which has been a focus for this dissertation.
@@ -43,10 +43,13 @@ in particular has led to an deluge of research on efficient
 algorithms and systems. These include systems like Tensorflow, MXNet,
 and PyTorch and have expanded to hardware specialization with recent projects
 like TVM and Glow. While these systems are optimized for the gradient
-descent optimization that neural networks are commonly trained with
-this thesis is focused instead on two other models. The first comes
-from the data mining domain and deals with the determining the
-similarity between nodes in a graph, based on structural information.
+descent optimization that neural networks are commonly trained with,
+this thesis is focused instead on two other models, graphs and decision
+trees.
+
+The first problem we deal with originates
+from the data mining domain and deals with determining the
+similarity between nodes (vertices) in a graph, based on structural information.
 For this purpose algorithms like SimRank and its variants have been
 proposed, but since they all try to solve the all-to-all similarity
 problem directly, their scalability suffers for massive graphs.
@@ -79,14 +82,56 @@ for learning from massive data efficiently. We utilize different techniques
 to deal with the data size including designing efficient parallel and distributed
 algorithms, making use of approximations to dramatically reduce the computational
 cost, and approximate data structures to bound the memory and computational cost
-of keeping models up to date. Throughout the development of this thesis the guiding
+of continuously updating the models. Throughout the development of this thesis the guiding
 principle has been to design algorithms that can scale regardless of data size.
 This is realized through algorithms that exhibit linear scale-out characteristics,
 bounding the memory and computational costs through approximations, and designing
 algorithms that are optimized for distributed settings through communication-efficient
 learning.
 
-\section{Research Questions \& Objectives}
+
+\subsubsection*{Open Challenges in Scalable Machine Learning}
+
+To summarize here are the open challenges in scalable machine learning
+we aim to tackle in this dissertation:
+
+\begin{itemize}
+	\item \emph{Scalable vertex similarity and concept discovery}. All-to-all vertex similarity
+	methods like SimRank do not scale to massive graphs. Domain-specific alternatives,
+	such as word2vec~\cite{word2vec} for text do not provide a principled way to uncover
+	concepts, relyling on parametric clustering methods like k-means clustering. In
+	addition the similarity calculation for such embedding methods will involve the
+	calculation of a dot product for all-to-all pair, making the process intractable.
+
+	\item \emph{Uncertainty estimation for non-linear online models}. As ML models are being
+	deployed in areas where mistakes can be costly, like autonomous driving and finance,
+	the ability to quantify the uncertainty in predictions becomes paramount. The constantly
+	changing environment and and real-time demands of these applications indicate that
+	online learning methods can be of great use. However, existing online learning
+	methods that can provide uncertainty estimates, like online quantile regression
+	~\cite{koenker2005qr}, do not provide the necessary accuracy and cannot deal
+	with highly non-linear problems. More flexible models like online decision trees
+	do not currently provide a way to estimate the uncertainty in their predictions.
+
+	\item \emph{Scalable gradient tree boosting in high dimensions.} Boosted
+	decision trees are one of the most successful models in both industry and academia.
+	Their success can be attributed to their scalability, ease of use, and accuracy.
+	However the current state of the art in boosted trees has two open challenges
+	in terms of their scalability.
+	First, for online decision trees, all existing boosting algorithms are sequential,
+	meaning that they cannot take advantage of modern parallel systems, severely limiting
+	their applicability to massive streaming datasets. For batch decision trees on the other
+	hand, current approaches can only parallelize their training along the data point
+	dimension. For high-dimensional data this means that scale-out is not possible,
+	requiring bigger and more expensive hardware to speed up training per feature.
+	In addition, current distributed approaches use dense communication that can
+	be highly inefficient for sparse, high-dimensional data.
+\end{itemize}
+
+Given these limitations we formulate in the sequel our research question and goals for
+this thesis.
+
+\section{Research Question \& Objectives}
 
 The objective of this dissertation is to create scalable algorithms for machine
 learning. Our approach has been to use two aspects to ensure scalability:
@@ -95,7 +140,7 @@ side. By approximation we mean either reducing an intractable problem
 to a more easily solved one that provides a useful answer, or by producing
 online models which can be trained on datasets of arbitrary size using bounded
 compute and memory. From the system side we develop algorithms that are parallel
-and some that are specifically optimized for the distributed setting.
+or are specifically optimized for the distributed setting.
 Our approach is to design solutions and provide implementations
 in popular open-source frameworks like Apache Spark~\cite{spark},
 MOA~\cite{samoa}, and XGBoost~\cite{xgboost}, ensuring the reproducibility
@@ -139,14 +184,14 @@ as we replace exact data structures with approximate ones, and trade-off consist
 guarantees for the ability to train the models online.
 
 
-\subsection{Research Questions}
+\subsection{Research Question}
 
 This thesis taken as a whole constitutes an effort of finding appropriate
 uses of approximation in order to make exact methods scale to massive datasets.
 In addition, in all our work we try to take full advantage of modern hardware,
 whether that is providing parallel implementations of our algorithms,
 or by designing algorithms from the
-ground up to work and be efficient in a distributed setting.
+ground up to be efficient in a distributed setting.
 
 These two aspects form the connecting thread between the papers
 included in the thesis: Use of approximation to make previously expensive approaches tractable, and
@@ -178,7 +223,7 @@ Our approach has been to perform a literature review to identify the challenges 
 state of the art, identify areas where approximation and parallelism can be applied to
 optimize performance, and proceed with the design and implementation of the algorithms.
 
-The algorithm design is guided by the research objectives, namely once we identify a problem
+The algorithm design is guided by the research objectives. Specifically, once we identify a problem
 to work on, e.g. uncertainty estimation in online decision trees, we use the three objectives
 listed as a guide for our optimizations. When exact solutions exist for a particular problem
 or for a different domain, e.g. a solution exists for batch learning but not for the online
@@ -188,8 +233,8 @@ data efficiently. In particular we can identify different kinds of optimizations
 \begin{itemize}
 	\item \emph{Replacing exact data structures with approximate ones.} This approach can be taken
 	to improve both the computational and memory cost of existing approaches. Depending on the
-	level of accuracy necessary for a particular estimator, many times approximate data structures
-	can deliver similar accuracy to exact ones, at a fraction of the computational cost.
+	level of accuracy necessary for a particular estimator, approximate data structures
+	can often deliver similar accuracy to exact ones, at a fraction of the computational cost.
 	One example in our research described in Chapter \ref{ch:uncertain-trees} is replacing the dense array of dependent values for the
 	estimation of quantiles at tree leafs with quantile sketches, thereby bounding the
 	memory cost of the algorithm.
@@ -198,21 +243,66 @@ data efficiently. In particular we can identify different kinds of optimizations
 	in Chapter \ref{ch:concepts} where we provide an approximate efficient algorithm for the node similarity problem by localizing the computation to one-hop neighborhoods, dramatically reducing the
 	amount of computation necessary to produce an approximate but informative answer.
 	\item \emph{Adapting the algorithm to the data to improve accuracy and efficiency.} In many problems
-	we have prior information about the data structure. For example many real-world graphs exhibit
-	power-law degree distribution \cite{small-world}, many user interaction metrics are power-law
-	distributed \cite{phonecalls, faloutsos1999internet, barabasi-small-world, click-stream-power-law} or exhibit extreme sparsity \cite{esl}. This properties can
+	we have prior information about the data properties. For example many real-world graphs exhibit
+	power-law degree distribution \cite{small-world, barabasi-small-world}, many user interaction metrics are power-law
+	distributed \cite{phonecalls, faloutsos1999internet, click-stream-power-law} or exhibit extreme sparsity \cite{esl}. These properties can
 	be exploited to reduce the computational and memory cost of learning algorithms as well as
 	improve their accuracy. In Chapter \ref{ch:concepts} we rely on the power-law degree
 	distribution of many real-world graphs to provide approximations with measurable error,
-	making an otherwise intractable computation efficient. In Chapters \ref{ch:session-length}
+	making an otherwise intractable computation efficient. In Chapter \ref{ch:session-length}
 	we adapt the objective function to better model the power-law distribution of the dependent.
 	In Chapter \ref{ch:boosted-trees} we make use of data sparsity to dramatically reduce
-	the communication cost of distributed algorithms for boosted trees.
+	the communication cost of distributed algorithms for gradient boosted trees.
+\end{itemize}
+
+\subsection*{Methodological Challenges}
+
+During the development of this thesis we have encountered several methodological
+challenges where a choice had to be made that delineates the extent to which
+our research tackles the original research question. We list these challenges
+here in order to make clear the limitations of this dissertation.
+
+\begin{itemize}
+	\item \emph{Evaluation of unsupervised models.} In Chapter \ref{ch:concepts} we present our
+	work on graph vertex similarity and uncovering concepts. The main methodological
+	challenge for this work is the evaluation of the model's quality, as the vertex
+	similarity task is unsupervised, as establishing the ground truth similarity would
+	require extensive user studies, and is impossible for the scale of the problems
+	we are trying to tackle~\cite{simrank}. Instead to provide a quantitative evaluation
+	of the algorithm we need to rely on proxy tasks, such as determining the similarity
+	of words using the Wordsim-353 dataset \cite{wordsim} and our model's agreement
+	with other established similarity models.
+
+	\item \emph{Fair comparison of learning systems.} As our research has focused on optimizations,
+	a major factor in evaluating the performance of an approach is the runtime. One challenge
+	in assuring the fair comparison of our methods against existing algorithms and systems is to isolate
+	the source of any potential gains in performance. For instance, in Chapter
+	\ref{ch:uncertain-trees} we present a comparison of our approach with the current
+	state of the art algorithm, Mondrian Forests. Due to the complexity of the algorithm
+	we did not re-implement Mondrian Forests from scratch in the same framework we used to develop our
+	algorithm, introducing possible uncertainties in the runtime comparison.
+	However, we make sure to demonstrate through the theoretical runtime cost of the
+	algorithm that our method scales much better as the number of instances grow.
+	In subsequent work presented in Section \ref{sec:block-gbt} we implement every
+	algorithm from scratch to eliminate such discrepancies.
+
+	\item \emph{Reliance on underlying frameworks.} To ease development and ensure
+	our work can have a wider impact we have used established ML frameworks to develop
+	our work. While using such frameworks can speed up development, it also introduces possible inefficiencies
+	in our learning pipeline. For example, our use of Apache Spark \cite{spark}
+	in Chapter \ref{ch:concepts} required configuration and tuning of system
+	parameters to achieve high performance. Similarly, the use of MOA for
+	Chapter \ref{ch:uncertain-trees} and SAMOA for Section \ref{sec:boostvht-method}
+	introduces possible inefficiencies as these frameworks are meant to provide
+	generic algorithm development platforms, and therefore lack optimizations for specific algorithms. Implementing our algorithms from the
+	ground up in a low-level language would potentially bring further runtime
+	optimizations, but would introduce many sources of error and slow down development, especially
+	distributed learning algorithms.
 \end{itemize}
 
 \section{Contributions}
 
-The main contributions of this dissertation, along the papers they appear in
+The main contributions of this dissertation, along with the papers they appear in
 are listed below:
 
 \begin{itemize}
@@ -238,8 +328,8 @@ are listed below:
 
 	\item \textbf{\sessionlength}: Predicting Session Length in Media Streaming.
 
-	In this work we deal with the following research question:\\
-	\emph{Can we effectively predict the amount of time a user will spend using
+	In this work we deal with the following research questions:\\
+	\emph{What are the characteristics of session length distributions in media streaming? Can we use that information to effectively predict the amount of time a user will spend using
 	a music streaming application at the moment they first open it?}
 
 	While session length distribution has been investigated for search
@@ -248,7 +338,7 @@ are listed below:
 	In this work we provide an analysis of the session length distribution
 	of a major online music streaming service using tools from survival analysis, and develop an appropriate
 	model to predict session length from a number of features including
-	user-based and contextual session-based features.
+	user-based and contextual, session-based features.
 	We demonstrate the differences in the way that sessions develop and end
 	between users, and illustrate the importance of selecting an appropriate
 	objective function for a non-negative, power-law distributed dependent value.
@@ -261,7 +351,7 @@ are listed below:
 
 	In this work we deal with the following research question:
 	\emph{How can we make use of modern hardware to parallelize and distribute
-	the computation of the otherwise serial online boosting algorithm?}
+	the computation of otherwise serial online boosting algorithms?}
 
 	While online decision trees allow us to maintain an up-to-date scalable
 	model using bounded memory and computation, the approximations they make
@@ -285,8 +375,8 @@ are listed below:
 	Uncertainty estimation is of paramount importance when applying learning methods
 	to domains where mistakes can be costly, like finance and autonomous vehicles.
 	In addition, in these domains we have a constantly changing environment,
-	and learning algorithms need to be able to constantly adapt. While ensemble
-	of decision trees have been shown to be accurate estimators, they online
+	and learning algorithms need to be able to constantly adapt. While ensembles
+	of decision trees have been shown to be accurate estimators~\cite{hundreds-classifiers}, their online
 	counterparts lack any way to estimate the uncertainty in their predictions.
 	In this paper we develop two general algorithms for uncertainty estimation
 	from online random forest ensembles, adapting batch methods to the online
@@ -313,9 +403,9 @@ are listed below:
 	enable faster and more cost-efficient training.
 \end{itemize}
 
-\subsection{Software}
+\subsection{Software Contributions}
 
-As part of this dissertation we have worked on the following software:
+As part of this dissertation we have worked on the following open-source software:
 
 \begin{itemize}
 	\item XGBoost~\cite{xgboost} is the most popular gradient boosted trees library,
@@ -325,7 +415,7 @@ As part of this dissertation we have worked on the following software:
 	for \blockgbt. As both of these works were performed during internships in private
 	companies (Pandora Media and Amazon AWS respectively), we have not been able to release
 	the code as open-source at the time of this writing.
-	As a result of this work we have become actively involved in the wider
+	However, as a result of this work we have become actively involved in the wider
 	development efforts of XGBoost and hope to integrate our block-distributed
 	work in the future.
 	\item MOA \cite{moa-book} is one of the most popular online learning library and includes
@@ -333,10 +423,10 @@ As part of this dissertation we have worked on the following software:
 	We have used MOA as a baseline comparison for \boostvht and extended it with
 	support for uncertainty estimation among other improvements in \uncertaintrees,
 	which we plan to contribute back to the project.
-	\item Apache SAMOA \cite{samoa} is a library and framework that enable the development
+	\item Apache SAMOA \cite{samoa} is a library and framework that enables the development
 	of distributed online learning algorithms, that can then be run on top of multiple
 	stream processing engines like Apache Flink \cite{flink} and Apache Storm \cite{storm}.
-	Our work on \boostvht has been performed on top of SAMOA and has been contributed back
+	Our work on \boostvht has been developed on top of SAMOA and has been contributed back
 	to the project.
 \end{itemize}
 
@@ -345,8 +435,6 @@ thesis however, is the distributed machine learning library for
 Apache Flink, FlinkML, which is the official ML library for Apache Flink
 since the 0.9 release\footnote{\url{https://flink.apache.org/news/2015/06/24/announcing-apache-flink-0.9.0-release.html}}.
 
-\section{Related Work}
-
 \section{Thesis Organization}
 
 The rest of this dissertation is organized as follows:
@@ -354,19 +442,20 @@ In Part \ref{part:bg} of the thesis we provide background information and
 related work relevant to the topics covered in the thesis. Chapter
 \ref{ch:bg-parallel-ml} introduces some basic building blocks
 for parallel and distributed machine learning, Chapter \ref{ch:bg-online-learning}
-presents online learning, Chapter \ref{ch:bg-graph-similarity} describes the problem
-of graph node similarity and existing approaches, and we end this part
+presents a brief overview of online learning, Chapter \ref{ch:bg-graph-similarity} describes the problem
+of graph node similarity and existing approaches, and we end the first Part of the dissertation
 with Chapter \ref{ch:bg-decision-trees} that acts as a brief introduction
 in decision tree learning in the context of this thesis.
 
 Part \ref{part:results} presents the results of the work developed for this
 dissertation. We have tried to make each chapter self-sufficient, providing
 brief explanations of the approaches along with the most significant results.
-Papers \conceptsicdmNum and \conceptskaisNum are presented in Chapter \ref{ch:concepts},
-Paper \sessionlengthNum is presented in Chapter \ref{ch:session-length}, and the final
-two chapter focus on decision tree learning, with Paper \uncertaintreesNum
-in Chapter \ref{ch:uncertain-trees} and Papers \boostvhtNum and \blockgbtNum
-being presented in Chapter \ref{ch:boosted-trees}.
+Our work on graph node similarity from Papers \conceptsicdmNum and \conceptskaisNum are presented in Chapter \ref{ch:concepts},
+the motivating example on medias streaming session length prediction from Paper \sessionlengthNum is presented in Chapter \ref{ch:session-length}, and the final
+two chapters of this Part focus on decision tree learning, with Paper \uncertaintreesNum
+on uncertainty estimation for online tree ensembles described in Chapter \ref{ch:uncertain-trees} and Papers \boostvhtNum and \blockgbtNum
+being presented in Chapter \ref{ch:boosted-trees}, describing our work on distributed online boosted trees
+and block-distributed gradient boosted trees respectively.
 
-We finish the thesis with Part \ref{part:conclusion} with a conclusion and discussion
+We finish the thesis in Part \ref{part:conclusion} with a conclusion and discussion
 chapter.
