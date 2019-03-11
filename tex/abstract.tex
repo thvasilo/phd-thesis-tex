@@ -1,19 +1,34 @@
 %!TEX root = ../main.tex
 
 \begin{abstract}
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Mauris
-purus. Fusce tempor. Nulla facilisi. Sed at turpis. Phasellus eu
-ipsum. Nam porttitor laoreet nulla. Phasellus massa massa, auctor
-rutrum, vehicula ut, porttitor a, massa. Pellentesque fringilla. Duis
-nibh risus, venenatis ac, tempor sed, vestibulum at, tellus. Class
-aptent taciti sociosqu ad litora torquent per conubia nostra, per
-inceptos hymenaeos. Aliquam ligula lectus, volutpat in, rutrum sit
-amet, ultrices at, elit. Aenean consequat facilisis sapien. Nulla
-auctor, wisi vel semper ornare, augue augue facilisis turpis, a
-laoreet quam libero quis erat. Vestibulum sagittis. Duis blandit
-laoreet tortor. Nulla mattis. Morbi eget turpis. Praesent mi. Nunc
-enim leo, blandit ut, sagittis at, pharetra sit amet, dui. Praesent
-porta tortor a ligula rutrum dapibus.
+Machine learning algorithms are now being deployed in practically all
+areas of our lives. Part of this success of machine learning can be
+attributed to the ability to learn more complex representations from
+massive datasets. As this proliferation continues, the ability for algorithms
+to adapt to a changing environment and deal with uncertainty, becomes
+increasingly important. These challenges need to be met counter to the
+diminishing increase in clock speeds observed recently, leading naturally to solutions
+that need to be parallelizable.
+
+In this thesis we develop scalable machine learning algorithms, with a focus on
+efficient, online, and distributed computation. We make use of \emph{approximations}
+to dramatically reduce the computational cost of exact algorithms, we develop
+\emph{online learning} algorithms to deal with a constantly changing environment
+under a tight computational budget, and develop \emph{parallel and distributed} algorithms
+to ensure that our algorithms can scale to the massive datasets available today.
+
+First, we propose a scalable algorithm for vertex similarity calculation. We demonstrate
+its applicability to multiple domains and demonstrate its scalability by training on
+one of the largest text corpora available in the order of minutes.
+Then, motivated by a real-world use case of predicting the session length in media streaming, we propose improvements to several aspects of learning
+with decision trees. We propose two algorithms to estimate the uncertainty in the predictions
+online random forests. We show that our approach can achieve better accuracy than the
+state of the art while being an order of magnitude faster to run.
+We propose a parallel and distributed online tree boosting algorithm
+that maintains the correctness guarantees of serial algorithms while providing speedups
+of x45 on average. Finally we propose an algorithm that allows for gradient boosted trees training to be
+distributed across both the data point and feature dimensions, and show that we can
+achieve communication savings of several order of magnitude for sparse datasets.
 \end{abstract}
 
 
