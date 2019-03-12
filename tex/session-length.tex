@@ -41,7 +41,7 @@ In our paper we provide an analysis the session length distribution using
 tools from survival analysis and use gradient boosted trees with specialized
 loss functions to place the probability mass correctly.
 
-\section{Method}
+\section{Analysis and Prediction of Media Streaming Session Length}
 \label{sec:session-length-method}
 
 In this section we describe the methods we have used to analyze the data
@@ -190,9 +190,12 @@ MSE objective place most of their probability mass closer to the origin and as a
 result perform better in terms of MAE, but miss many of the longer sessions
 and as a result perform worse in terms of RMSE.
 
-\section{Limitations and motivation for follow-up work}
+\section{Discussion}
 \label{sec:session-length-limitations}
 
+In this Chapter we presented our work on the analysis of session
+length distribution in media streaming, and presented a specialized
+predictive model.
 Through this work we are able to identify several limitations in the current
 state of the art in decision tree learning.
 
@@ -203,7 +206,7 @@ the algorithms to adapt to the patterns exhibited throughout the day,
 such as day/night and work/home cycles, and be able to adjust to drifting
 distributions. 
 In order to be able to continuously adapt our models, we have focused on online learning
-methods in Papers \boostvhtNum, \uncertaintreesNum that are both scalable and can continuously update tree models with new information about the world.
+methods in Papers \boostvhtNum and \uncertaintreesNum that are both scalable and can continuously update tree models with new information about the world.
 
 Second, we were able to identify the importance of quantifying the uncertainty
 in predictions. For a quantity such as session length, exact predictions can
@@ -211,7 +214,7 @@ be of little value.
 The ability to quantify the uncertainty in a prediction can be more useful as
 it allows us to make decisions with confidence and avoid giving users
 a bad experience. 
-For example if we know with a high degree of certainty
+For example, if we know with a high degree of certainty
 that the true value of the session length will be between 30 and 45 minutes
 we can optimize recommendations and ad scheduling for a long running session.
 While there exist methods that are able to provide uncertainty estimates
@@ -228,4 +231,5 @@ applications such as ad targeting at major enterprises \cite{mcrank, ctr-faceboo
 What's common in these applications is the need to deal with potentially very
 high-dimensional data at scale.
 In our follow-up work, we have focused on expanding the 
-area of scalable boosted trees for high-dimensional data in Papers \boostvhtNum, and \blockgbtNum.
+area of scalable boosted trees for high-dimensional data in Papers \boostvhtNum in the online
+domain, and \blockgbtNum in the batch domain.

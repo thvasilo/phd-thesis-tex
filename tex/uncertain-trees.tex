@@ -32,7 +32,7 @@ and adapt to concept drift through the use of online base learners \cite{fimt},
 and provide uncertainty estimates at an accuracy level equal to or better
 than the state of the art \cite{mondrian-forests-original}, while being an order of magnitude faster to run.
 
-\section{Method}
+\section{Uncertainty Estimation for Ensembles of Online Decision Trees}
 \label{sec:uncertain-trees-method}
 
 In this section we provide an overview of the methods developed for this work.
@@ -166,9 +166,11 @@ of the CDF for the ensemble.
 \label{sec:uncertain-trees-results}
 
 We evaluate our algorithms against a simple baseline and a state of the art
-algorithm, Mondrian Forests \cite{mondrian-forests-original}. We use 20 small-scale
+algorithm, Mondrian Forests (MF) \cite{mondrian-forests-original}. We use 20 small-scale
 datasets gathered from the OpenML repository \cite{vanschoren2013openml}, as well
-as 10 large scale datasets that exhibit concept drift.
+as 10 large scale datasets that exhibit concept drift. We note that while the approaches we developed are model-parallel, i.e.
+every tree can be trained independently in parallel, the results listed are single-threaded
+to ensure fair comparison with MF.
 
 Evaluating interval prediction algorithms entails two aspects: The error rate
 and the width of the intervals. The algorithms should maintain an error rate
@@ -259,3 +261,26 @@ keeping the produced intervals informative.
 	\label{tab:uncertain-significance}
 \end{table}
 
+\section{Discussion}
+
+In this Chapter we have presented our work on uncertainty estimation for
+online decision trees. We developed two algorithms for this purpose,
+and demonstrated their accuracy and efficiency compared to a state
+of the art algorithm.
+
+Connecting this work to our original goals in Section \ref{sec:intro-question-objectives},
+we have dramatically reduced the computation necessary for online conformal
+prediction by maintaining up-to-date online models. For both OnlineCP and
+OnlineQRF we have bounded the memory use of the algorithms by using approximate
+and bounded data structures, that are able to provide the estimates we need
+at a fraction of the memory cost.
+The approximations made however create a tradeoff,
+as we can no longer guarantee the consistency and validity of the algorithms.
+As the trees in a random forest are trained independently there is no
+need to communicate model updates when running the algorithms in parallel.
+However, for OnlineQRF in a distributed setting we would need to merge the histograms of each tree to provide
+a quantile prediction. Through our use of the near-optimal KLL sketch we ensure
+that the communication cost is minimal.
+The optimizations listed cover two of the three objectives
+listed in Section \ref{sec:intro-question-objectives} and this work investigates
+an aspect of our research question in the context of uncertainty estimation.

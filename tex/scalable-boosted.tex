@@ -358,3 +358,26 @@ in the CDF representation.
 	\caption{The byte size of the feature sketches being communicated for the various datasets.}
 	\label{fig:block-gbt-sketch-size}
 \end{figure}
+
+\section{Discussion}
+
+In this Chapter we have presented our work on scalable boosted
+trees. We first developed a model-parallel online algorithm with linear scaling
+characteristics and demonstrated its accuracy advantages over single
+trees and significant runtime gains compared to serial tree ensembles.
+We have used efficient communication to dramatically reduce the number
+of messages sent.
+
+Second, we developed a block-distributed gradient boosted tree
+algorithm. Apart from enabling scale-out across both the feature
+and data point dimensions, we took advantage of data sparsity
+to reduce the communication necessary for training by several
+orders of magnitude.
+
+Thus, these studies demonstrated how
+algorithmic co-design with distributed systems can lead
+to optimized runtimes and communication savings, aligning
+this work with our objectives and research question
+defined in Section \ref{intro-question-objectives}
+We note however that the benefit of both approaches
+is limited when the dimensionality of the data is low.

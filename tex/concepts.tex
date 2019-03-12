@@ -30,7 +30,7 @@ Clearly then for large-scale graphs some form of approximation needs to be used
 to make the computation feasible.
 
 
-\section{Method}
+\section{Scalable Vertex Similarity and Concept Discovery}
 
 We deal with the scalability problem by using a two-step process to calculate similarities.
 We first create a \emph{correlation graph} that models the surface correlations between objects.
@@ -239,3 +239,16 @@ which was at the time of publication the state of the art embedding
 method. We train our method on a smaller corpus and smaller window than
 the GloVe vectors, but are still able to generate similarities comparable
 to GloVe (0.71 Spearman rank correlation)
+
+\section{Discussion}
+
+In this chapter we presented our work on scalable vertex similarity and concept
+discovery. We made use of approximations to dramatically reduce the amount of
+computation, first by using locality in our computations, and then by taking
+advantage of the structure of the graphs to dramatically reduce the number of
+edges that are involved in our similarity calculations, further decreasing the
+computational cost. We designed the algorithm for a distributed setting, and
+by careful design of the similarity calculation step, we are able to minimize
+the amount of network communication necessary. Thus, in this work we cover
+two of the three objectives defined in Section \ref{sec:intro-question-objectives}
+and tackle our original research question in the context of vertex similarity.

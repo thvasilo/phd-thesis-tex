@@ -16,8 +16,9 @@ problems.
 
 \section{Summary of Results}
 
-We first proposed an approximate way to to calculate similarities between
-nodes in a graph. Our method dramatically reduces the computational cost
+We first proposed an approximate way to calculate similarities between
+nodes in a graph, and discover concepts in the derived similarity
+graph. Our method dramatically reduces the computational cost
 by localizing computation in node neighborhoods, and taking advantage
 of the sparse graph structure to further optimize the computation with controllable
 error. We demonstrated the generality of the approach in several domains and presented
@@ -56,26 +57,47 @@ algorithm to achieve efficient block-distributed prediction, and make use
 of the parameter server's flexibility to exploit data sparsity and achieve
 order of magnitude improvements in the communication cost of the training process.
 
+\section{Discussion}
+
+We would to discuss here the extent to which this work answers the research
+question posited for our thesis which we reproduce here:
+
+\begin{displayquote}
+	\emph{How can we use approximations and modern hardware to make otherwise computationally intractable approaches scale?}
+\end{displayquote}
+
+\noindent
+This dissertation has provided tackled this question by:
+\begin{itemize}
+	\item Using approximate solutions and bounded error subsampling of edges
+	to produce a vertex similarity algorithm with a scalable
+	distributed implementation.
+
+	\item Using approximate data structures and online learning methods
+	to enable the estimation of online random forest uncertainty. The approximations
+	made trade off convergence guarantees for efficient computation.
+
+	\item Using distributed computation to tackle high-dimensional problems
+	for boosted decision trees, maintaining the correctness of the algorithms
+	while providing significant speedups. We make clear the limitations
+	of the approaches for low dimensional and dense data.
+\end{itemize}
+
+
 \section{Future Directions}
 
 We identify several aspects of work that can be expanded upon and improved,
 targeting specific limitations of the model. For our work on graph node similarity
 our next targets are to create hierarchical structures of concepts, thereby creating
-composable representations in an unsupervised manner. We would also like to create
+composable representations in an unsupervised manner. The main challenge for this
+task is again the computational cost, as we would need to maintain information
+about the role of each node at each hierarchy level as we propagate the relationships.
+Another interesting problem is developing
 a generalized algorithm for evaluating graph node similarity from a stream of edges,
 that form the graph in real time. Finally the calculation of similarities between
 nodes in the graph that are more than two hops away is currently, by design, not included
-in the mode. However, there could be a way to calculate these by following paths in
-the resulting similarity graph. An efficient algorithm to do that would generalize
-the problem the algorithm is able to solve.
-
-For our work parallel boosted online trees, one limitation is for datasets with
-a limited amount of features, which would limit the potential speedup of the
-algorithm.
-An interesting direction to explore is to
-create efficient data-parallel and block-parallel algorithms that might sacrifice
-the correctness guarantees of our feature-parallel algorithm for more available
-parallelism.
+in the model. However, there could be a way to calculate these by following paths in
+the resulting similarity graph.
 
 For our work in the estimation of uncertainty in online decision trees, our foremost
 priority would be the theoretical justification of the validity of the produced intervals,
@@ -83,6 +105,14 @@ i.e. to prove that, like the batch QRF and conformal prediction, the produced in
 are consistent estimators given the requested significance level. The ability to
 deal with concept drift at the meta-algorithm level would also be welcome, instead
 of relying on the underlying weak learner to provide this capability.
+
+For our work parallel boosted online trees, one weakness are datasets with
+a small amount of features, which limits the potential speedup of the
+algorithm.
+An interesting direction to explore is to
+create efficient data-parallel and block-parallel algorithms that might sacrifice
+the correctness guarantees of our feature-parallel algorithm for more available
+parallelism.
 
 Finally for our work on block-distributed gradient boosted trees one priority is to
 improve the algorithm's performance for datasets with low sparsity. The overhead
