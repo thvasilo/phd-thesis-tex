@@ -215,11 +215,9 @@ Based on this research question, we develop our methods utilizing approximate co
 	of the resources exact approaches require. These approximations combined with utilizing modern hardware lead to efficient, scalable solutions.}
 \end{displayquote}
 
-
-
 \section{Methodology}
 
-This research strategy for this dissertation is to perform quantitative, empirical research.
+The research strategy for this dissertation is to perform quantitative, empirical research.
 Our approach has been to perform a literature review to identify the challenges in the
 state of the art, identify areas where approximation and parallelism can be applied to
 optimize performance, and proceed with the design and implementation of the algorithms.
@@ -255,6 +253,41 @@ data efficiently. In particular we can identify different kinds of optimizations
 	In Chapter \ref{ch:boosted-trees} we make use of data sparsity to dramatically reduce
 	the communication cost of distributed algorithms for gradient boosted trees.
 \end{itemize}
+
+\subsection*{Delimitations}
+
+
+The extent at which we try to answer the research question is of course limited by
+a number of factors. First, the two models we focus on are graphs and decision
+trees. We find graphs to be powerful data structures that can encode complex
+relationships and are therefore worthy of further study in terms of scalability.
+Decision tree have been shown to perform well for a wide variety of tasks~\cite{hundreds-classifiers}
+and have distinct advantages like interpretability, although that is limited
+for large ensembles, the ability to deal with missing data in a principled
+manner, and hyperparameters that are straightforward to tune.
+%Comparing decision trees with deep learning models mentioned before, the space
+%of architecture search in a deep network versus parameters like
+%the minimum splitting weight in a tree is much larger, meaning
+%that designing a neural network for a specific task requires
+%much more domain knowledge and experience than training a
+%decision tree ensemble.
+
+Second, although we develop online learning methods that can deal
+with concept drift, we do not propose any new concept drift adaptation
+mechanism. Instead we rely on existing concept drift adaptation mechanisms
+provided by the underlying online learning algorithms in our ensembles.
+
+Third, for our decision tree algorithms, our comparisons focus on
+competing decision tree approaches. For example, for the online uncertainty
+estimation problem of Chapter \ref{ch:uncertain-trees}, online linear
+models can also be used to determine prediction intervals. In our evaluation
+however we focus on the state of the art decision tree algorithms as
+most real-world problems are highly non-linear.
+
+Finally, as we mentioned previously, our evaluation is experimental
+and focuses on empirical results drawn from quantitative and qualitative
+experiments. Therefore, the methods we propose lack rigorous theoretical consistency guarantees,
+however, their time and space costs have been derived where possible.
 
 \subsection*{Methodological Challenges}
 
@@ -303,13 +336,14 @@ here in order to make clear the limitations of this dissertation.
 
 \section{Contributions}
 
-The main contributions of this dissertation, along with the papers they appear in
+The main contributions of this dissertation, along with the papers they appear in,
 are listed below:
 
 \begin{itemize}
 	\item \textbf{\conceptsicdm}: Knowing an object by the company it keeps: A domain-agnostic scheme
-	for similarity discovery. \\
-	\textbf{\conceptskais}: Domain-Agnostic Discovery of Similarities and Concepts at Scale.
+	for similarity discovery~\cite{concepts-icdm}. \\
+	\textbf{\conceptskais}: Domain-Agnostic Discovery of Similarities and Concepts at Scale
+	~\cite{concepts-kais}.
 
 	In these works we we deal with the following research questions:\\
 	\emph{How to create a scalable way to calculate the similarity between nodes
@@ -327,7 +361,7 @@ are listed below:
 	expensive operation being a \emph{self-join} operation that has linear speed-up and
 	constant scale-up, with limited communication.
 
-	\item \textbf{\sessionlength}: Predicting Session Length in Media Streaming.
+	\item \textbf{\sessionlength}: Predicting Session Length in Media Streaming~\cite{session-length}.
 
 	In this work we deal with the following research questions:\\
 	\emph{What are the characteristics of session length distributions in media streaming? Can we use that information to effectively predict the amount of time a user will spend using
@@ -348,7 +382,7 @@ are listed below:
 	trees, topics we subsequently worked on in Papers \boostvhtNum, \uncertaintreesNum,
 	and \blockgbtNum respectively.
 
-	\item \textbf{\boostvht}: BoostVHT: Boosting Distributed Streaming Decision Trees.
+	\item \textbf{\boostvht}: BoostVHT: Boosting Distributed Streaming Decision Trees~\cite{boost-vht}.
 
 	In this work we deal with the following research question:
 	\emph{How can we make use of modern hardware to parallelize and distribute
@@ -367,7 +401,7 @@ are listed below:
 	across the features, thereby maintaining the guarantees of online boosting
 	algorithms while providing significant speedups.
 
-	\item \textbf{\uncertaintrees}: Quantifying Uncertainty in Online Regression Forests.
+	\item \textbf{\uncertaintrees}: Quantifying Uncertainty in Online Regression Forests~\cite{uncertain-trees}.
 
 	In this work we deal with the following research question:
 	\emph{How can we estimate the uncertainty in the predictions of online tree
@@ -384,7 +418,7 @@ are listed below:
 	domain through approximate computation.
 
 
-	\item \textbf{\blockgbt}: Block-distributed Gradient Boosted Trees.
+	\item \textbf{\blockgbt}: Block-distributed Gradient Boosted Trees~\cite{block-gbt}.
 
 
 	In this work we deal with the following research questions:
