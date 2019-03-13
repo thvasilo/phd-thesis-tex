@@ -1,20 +1,22 @@
-\chapter{Graph Similarity}
+\chapter{Graph Vertex Similarity}
 \label{ch:bg-graph-similarity}
 
 The problem of computing the similarity between nodes in a graph has been
-well-studied under the context of link prediction, anomaly detection,
-recommendation, and information retrieval among others. Therefore a
-number of algorithms have been proposed to tackle the issue \todo{Cite!}.
+well-studied under the context of link prediction~\cite{link-prediction-survey},
+anomaly detection~\cite{graphsim-anomaly},
+recommendation~\cite{graphsim-recommendation}, and information retrieval
+~\cite{graphsim-retrieval} among others. Therefore a
+number of algorithms have been proposed to tackle the issue.
 In this chapter we provide an introduction to the problem and
 highlight some of the established approaches as well as recent
 research focused on scalability. We divide the approaches into local
 and global based on their ability to determine the similarity of nodes
-based on local information or by looking into the entire graph
+based on local information or by looking into the entire graph, as done in
 ~\cite{link-prediction-survey}.
 
-As the problem is closely related to link prediction, we mention
-also the survey by \citet{link-prediction-survey} or the more
-recent \cite{link-prediction-survey-2017} on the subject
+As the problem is closely related to link prediction, we point the interested reader to
+the survey by \citet{link-prediction-survey} or the more
+recent \cite{link-prediction-survey-2017} on the subject,
 that include vertex similarity algorithms.
 
 \subsection*{Preliminaries}
@@ -31,7 +33,7 @@ To ease notation we assume undirected graphs, however most of the methods
 mentioned here can apply to directed graphs as well.
 For a node $v \in V$, $N(v)$ denotes the set of nodes in $v's$ \emph{neighborhood},
 that is, all the nodes that are reachable from $v$ within a single hop.
-We denote the adjacency matrix of the graph by $\mathbf{A}$
+We denote the adjacency matrix of the graph by $\mathbf{A}$.
 
 
 \section{Local Similarity Measures}
@@ -53,12 +55,12 @@ it is simply denoted as:
 \end{equation}
 
 
-\emph{Jaccard Coefficient.} The Jaccard coefficient measures the similarity between
+\emph{Jaccard Coefficient.} The Jaccard coefficient~\cite{Jaccard1912} measures the similarity between
 sets, defined as the size of the intersection of the two sets, divided by the size of their
 union. Its definition is the following, and has the same complexity as Common Neighbors:
 
 \begin{equation}
-	S_{Jac} = \frac{|N(u) \cap N(v)|}{N(u) \cup N(v)}
+	S_{Jac} = \frac{|N(u) \cap N(v)|}{|N(u) \cup N(v)|}
 \end{equation}
 
 \emph{S{\o}rensen-Dice coefficient.} The S{\o}rensen-Dice measure \cite{Dice45,Sorensen48} is
@@ -93,7 +95,7 @@ Global methods use information from the complete graph to determine the
 similarity between nodes that can be more than two hops apart. These methods
 are commonly iterative and have a much higher computational cost than local
 measures, as they calculate all-to-all rather than local similarities.
-The general approach is calculate similarity in a recursive manner:
+The general approach is to calculate the similarity in a recursive manner:
 Two nodes are considered similar if their neighbors are also similar.
 The algorithms listed below all use some variation of this principle.
 
@@ -117,6 +119,7 @@ in a recursive manner as:
 	S_{SR}(u, v)= C \cdot \frac{\sum_{y \in N(u)} \sum_{y^{\prime} \in N(v)} S_{SR}(y, y^{\prime})}{d{x} \cdot d_{y}}
 \end{equation}
 
+\noindent
 where $C$ is a decay factor. Compared to the Katz measure described above,
 SimRank only includes paths of even length, which can affect the similarity
 calculation~\cite{vertex-similarity-survey}, and can result to invalid results
@@ -129,7 +132,7 @@ and has the same drawbacks.
 \emph{Average Commute Time.} This metric makes use of random walks to determine
 the average number of steps required to reach node $v$ from node $u$. The assumption
 this method makes is that two nodes are more similar if they have a smaller average
-commute distance, and is defined in terms of elements of the pseudoinverse of the
+commute distance, and is defined in terms of elements $l$ of the pseudoinverse of the
 graph Laplacian, $L$ as defined in \cite{link-prediction-survey}.
 
 \begin{equation}

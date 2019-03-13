@@ -5,7 +5,7 @@ In this chapter we will provide an introduction to online learning, which is the
 setting for Papers \boostvhtNum and \uncertaintreesNum. We start by providing an brief
 overview of the kinds of models available in Section \ref{sec:bg-ol-models}
 and identify issues and solutions for evaluation in Section \ref{sec:bg-ol-evaluation}.
-Since our work focuses on ensemble methods we present the online ensemble algorithms in Section
+Since our work focuses on ensemble methods we present some popular online ensemble algorithms in Section
 \ref{sec:bg-ol-ensembles} and finish the chapter with a look at the available
 open-source software for online learning in Section \ref{sec:bg-ol-software}.
 
@@ -13,7 +13,7 @@ open-source software for online learning in Section \ref{sec:bg-ol-software}.
 \label{sec:bg-ol-models}
 
 As with batch learning, there exists of variety of models in the online
-learning domain. Usually these are models that were first developed
+learning domain. Commonly these are models that were first developed
 for the batch setting and subsequently adapted to online learning.
 In this section we focus on supervised learning methods for
 classification and regression, and explore different
@@ -39,28 +39,28 @@ In Instance Based Learning, we make predictions based on the instances themselve
 model-based approaches that try to extract a model (function) from the
 data. IBL algorithms are inherently incremental, and can be faster to
 update compared to a model-based approach, however suffer from two
-distinct disadvantages: First, we need to store the data which in a
+distinct disadvantages: First, we need to store the data points themselves, which in a
 massive streaming data scenario can be infeasible. To deal with this
 issue IBLStreams will evict the oldest examples once an upper limit on
-the size is hit. Second, inference can be much slower as it requires
+the number of data points stored is hit. Second, inference can be much slower as it requires
 finding the k nearest neighbors to the incoming dataset, which even when
-using efficient indexing structures (like Locality Sensitive Hashing) can be very costly
+using efficient indexing structures (like Locality Sensitive Hashing\cite{lsh-indyk, lsh-gionis}) can be very costly
 compared to a model-based prediction, e.g. from a linear model. The
 authors suggest that IBL makes more sense in scenarios where updates are
-often but queries infrequent. In terms of drift adaptation IBLs can have
+often but queries infrequent. In terms of drift adaptation, IBLs can have
 the advantage that removing the effect of older data points is easy
 compared to say an ANN model, but it is still highly model-dependent.
 
-In terms of the learning process of IBLStreams, the authors suggest ways to deal with
-the concept drift scenario. They mention the limitations of a non-adaptive, window-based
+The authors suggest different ways to deal with
+concept drift in IBLStreams. They mention the limitations of a non-adaptive, window-based
 approach and suggest that IBL methods are good candidates for learning in
 under drift because of their locality property, that is, that introducing
 a new example will only affect the predictions made around that region.
-Since an example should only be included in the model if it improves the
-accuracy, but that impossible to know ahead of time, we can use heuristics
+In theory, an example should only be included in the model if it improves the
+accuracy, but that is impossible to know ahead of time. However, we can use heuristics
 to determine when to discard examples. One could use the temporal and/or spatial
 relevance, or consistency of the examples to the current concept.
-In the IBLStreams algorithm, the contents and size of the ``case base'',
+In IBLStreams, the contents and size of the ``case base'',
 i.e. the examples that form the nearest neighbor representation, is
 updated automatically. IBLSTreams tries to maintain a balance between
 maintaining few examples in the case base in order to be able to deal
@@ -68,7 +68,7 @@ easier with concept drift, while keeping the set large enough so that
 predictions under a single concept are accurate. To that end, they
 use statistical change detection mechanisms and also provide ways
 to update the parameters of the algorithm, e.g. the number of nearest
-neighbors to examine based on the observed error.
+neighbors to examine, based on the observed error.
 
 \subsection*{Linear Models}
 In terms of model-based approaches, linear models are popular
@@ -79,7 +79,9 @@ For regression these models have the general form~\cite{esl}:
 	f(X) = \beta_0 + \sum_{j=1}^{p}{X_j\beta_j}
 \end{equation}
 
-and assume a linear relationship between the dependent and independent predictors.
+\noindent
+where $p$ the number of features in the dat, assuming a linear relationship between the dependent and independent predictors.
+
 One of the earliest examples of an online linear classification model is the seminal
 Perceptron algorithm \cite{perceptron} that tries to find a separating hyperplane
 between two classes based on the distance of the misclassified points to the
@@ -88,13 +90,13 @@ In the online setting, linear models are typically trained using a form
 of stochastic gradient descent, that moves the coefficients
 of the model according to the gradient of a single data point
 and a step size parameter.
-This is a simple algorithm that however has many drawbacks
+The Perceptron is a simple algorithm that however has many drawbacks
 noted in \cite{esl}, regarding the stability of the algorithm
 for perfectly separable data, its dependence on correctly setting
 the step size, and the fact that the algorithm does not
 converge when the data are not separable.
 Another important family of linear algorithms designed for the online domain
-are Passive-Aggressive algorithms \cite{passive-aggressive}.
+are Passive-Aggressive (PA) algorithms \cite{passive-aggressive}.
 These are margin-based algorithms for classification, regression and
 sequence prediction that solve a constraint optimization problem.
 For every incoming incoming example, PA algorithms
@@ -104,9 +106,15 @@ or by applying the necessary correction to the model coefficients
 to enforce a zero loss when the margin is not satisfied (aggressive).
 While being a linear model, PA algorithms can make use of the kernel trick to
 employ non linear predictors, as done by the seminal work
-on Support Vector Machines (SVM) by \citet{svm-book}.
+on Support Vector Machines (SVM) by \citet{svm-book}, which we
+focus on in the sequel.
 
 \subsection*{Support Vector Machines}
+Support Vector Machines, like the Perceptron, are algorithms for determining
+optimal separating hyperplanes, but unlike the Perceptron, they can deal with
+cases where the data are not linearly separable. They achieve that by using the
+kernel trick to transform the data and determining a linear boundary in
+the transformed space\cite{esl}.
 SVMs have also
 been extended to work in the online domain \cite{online-kernels}
 where the main challenge is the need to maintain a set of support vectors
@@ -123,16 +131,16 @@ Perceptron update, shrinks the support vector coefficients, and removes
 the support vectors with the smallest coefficients.
 The Passive-Aggressive algorithm has also been modified
 to perform kernel learning on a budget \cite{pa-budget},
-i.e. with a bounded model size, by introducing a additional
+i.e. with a bounded model size, by introducing an additional
 constraint to the original problem that removes one support
 vector for every new error once the budget is met.
 One key drawback of these methods
 is the need to determine a budget for the model size beforehand.
 More recently, new methods have been proposed to scale up
 online kernel learning to massive datasets while maintaining a bounded model size,
-by transforming the feature space, and then performing linear learning \citet{large-online-kernels}
+by transforming the feature space, and then performing linear learning \cite{large-online-kernels}
 or by approximating new instances by ``core points''
-scattered across the input domain~\citet{approximation-vm}.
+scattered across the input domain~\cite{approximation-vm}.
 
 \subsection*{Rule-based Learning}
 Decision rules \cite{decision-lists} and decision trees \cite{breiman1984cart} are two closely related learning methods
@@ -148,18 +156,40 @@ these are typically learned by maximizing the information gain
 of introducing a rule for a given outcome.
 \citet{decision-rules-streams}
 provided one of the first decision list learning algorithms aimed at the streaming
-domain, which updates rules by updating a set of sufficient statistics for each
+domain, which updates its rules by maintaining an up-to-date set of sufficient statistics for each
 rule. Rules are expanded by selecting the condition, for example a threshold on
 a numerical feature, that minimizes the entropy of the class labels of the example
 that are covered by that rule~\cite{decision-rules-streams}.
 The method uses the Hoeffding bound \cite{hoeffding-bound} to determine when it is time
 to update a rule, either by expanding an existing one or introducing a new rule.
 The process was later expanded to handle cases of concept drift \cite{adaptive-rules-classification}
-and the regression task~\cite{adaptive-rules-regression}.
+and regression~\cite{adaptive-rules-regression}.
 
 
+% TODO
+%\subsection*{Online Gaussian Processes}
+%
+%Gaussian Processes (GP) can be viewed as a Bayesian alternative to kernel methods
+%like SVM~\cite{ml-book-murhpy}. As defined by \citet{ml-book-murphy}, GPs work by inferring a distribution over
+%functions given the data, assuming a jointly Gaussian distribution of
+%the function values, with the covariance matrix given a kernel value
+%over all pairs of data points. One distinct advantage GPs have over
+%SVMs is the ability to quantify the uncertainty in their predictions,
+%as GPs are probabilistic models.
+%However,Gaussian Processes
+%have a time complexity of $O(N^3)$ limiting the base GP algorithm to small
+%data scenarios. To address this shortcoming, there have been
+%multiple attempts to improve their computational characteristics, and adapt them
+%to the online learning domain, see \cite{gp-review} for a recent survey on scalable
+%GPs.
+%
+%One approach for scalable GPs is the use of \emph{inducing points} in order to
+%introduce sparsity in the GP and take advantage of matrix structures to achieve
+%faster computation. The online sparse GPs proposed by \citet{online-sparse-gp}
+%work by keeping an up-to-date Cholesky factor of the sparse covariance matrix,
+%instead of updating the covariance matrix itself. For kernel functions with
+%local support this leads to linear time online updates.
 
-%[Online Gaussian Processes] \\
 
 
 
@@ -182,21 +212,27 @@ the evaluation of online learning algorithms and refer the
 reader to \cite{online-evaluation-journal} for an in-depth look
 into these issues.
 
-The authors identify three areas that
+\citet{online-evaluation-journal} identify three areas that
 become important in the evaluation of streaming learning
 algorithms: \emph{Space} in terms of the memory requirement of the algorithm, \emph{learning time}, and \emph{generalization power}.
 Each of these aspects is important in the online learning scenario, and
-we will discuss the space and generalization power aspects.
+we will discuss here the space and generalization power aspects, since
+learning time is a more intuitive concept.
 
 
-Since these algorithms are designed for limited resource environments,
-the space requirements of the algorithm are an important consideration.
+Online learning algorithms are commonly designed for limited resource environments,
+and as such, the space requirements of the algorithm are an important consideration.
 Apart from the theoretical analysis of the space cost of the algorithms,
-their empirical costs should also be analyzed. \citet{ram-hours} introduced
+their empirical costs should also be analyzed, as the empirical differences
+between algorithms with the same theoretical memory cost can be
+significant. \citet{ram-hours} introduced
 the concept of \emph{RAM-hours} for this purpose, with the aim of estimating
 the cost-efficiency of an algorithm in a cloud environment where instances
 are charged according to the time taken to use them, and instances with
-higher memory capacities are usually more expensive. \citet{vfdt} also
+higher memory capacities are usually more expensive.
+RAM-hours measure the empirical memory consumption of an
+algorithm, with one GB of RAM deployed for an hour equaling one RAM-hour.
+\citet{vfdt}
 make specific mention of the memory requirements of the online decision
 tree algorithm they develop, and provide solutions that make the algorithm
 memory bounded. However as \citet{online-evaluation-journal} mention, this
@@ -205,38 +241,42 @@ algorithms.
 
 In terms of evaluating the generalization power of online learning
 algorithms, one aspect that requires special attention is the fact
-that the learner evolves as we train it with more samples, so it
+that the learner evolves as we train it with more samples, so its
 performance in the early stages of learning can be very different
-to later stages. The two strategies proposed as viable for the online
+to later stages. The two strategies proposed as viable evaluation strategies for the online
 setting in \cite{online-evaluation-journal} are \emph{holdout testing}
 and \emph{prequential evaluation}. Holdout testing refers to the
 established evaluation method from batch learning, where we train
 our algorithm on a subset of the data, the \emph{training set},
 and evaluate its performance on a set of unseen data, the
-\emph{test set} or \emph{holdout set}. This requires us to set
+\emph{test set} or \emph{holdout set}. This requires us to set a
 specific interval at which we check the performance of the algorithm
 on the test set, although theoretically we could also perform this
-test after each example, but for a large computational cost if
+test after each example, introducing however a large computational overhead if
 the test set is large.
 
 An alternative is to use
 predictive sequential (prequential) evaluation where we present
 an example to the algorithm, make a prediction, update our metric,
 and finally reveal the example's label and proceed to train the
-algorithm with it. This method can also be used in situation
+algorithm with it. This method can also be used in situations
 where the label is available for only few of the points in the
 data set. However, because the model will exhibit worse performance
 in the early learning stages, it is recommended to apply a forgetting
 factor to the metric, so that large errors made in the start do
-not severely affect the over evaluation of the algorithm. This
+not severely affect the overall evaluation of the algorithm. This
 can be done using sliding windows, i.e. evaluating the error using
-overlapping subsets of incoming dataset, or a using fading
+overlapping subsets of the incoming dataset, or using fading
 factors which discount the error for older examples \cite{online-evaluation-kdd}.
-These have the added advantage of being faster and memory-less
+These have the added advantage of being faster to compute and memory-less
 compared to using sliding windows.
 
 One common issue in classification, in the batch as well as the online setting, is class
-imbalance. To deal with this problem in the online setting, \citet{kappa-statistic}
+imbalance.
+For example, on a dataset where 90\% of the instances belong to a single
+class, simple majority classifier will achieve 90\% accuracy, although no
+real learning is taking place.
+To deal with this problem in the online setting, \citet{kappa-statistic}
 proposed the Kappa statistic, and its extension $\kappa_m$ \cite{kappa-m},which is a robust estimator that takes into consideration
 the probability that a classifier will produce the correct prediction by chance.
 The metric has also been expanded to deal with temporal dependence
@@ -244,14 +284,14 @@ in the labels of subsequent examples \cite{temporal-dependence}.
 More recently, \citet{prequential-auc} proposed an online adaptation
 of the area under the ROC curve metric (AUC) \cite{auc}, called
 \emph{prequential AUC} which can deal with the class-imbalance
-problem and in the presence of potential concept drift, and perform
-an evaluation against metrics like the Kappa statistics to show
-that each captures a different aspect of the performance.
+problem also in the presence of concept drift, and performed
+an evaluation against metrics like the Kappa statistic to show
+that each metric captures a different aspect of the algorithm's performance.
 
 \section{Online Ensemble Methods}
 \label{sec:bg-ol-ensembles}
 
-Due to their approximate nature online learning models often demonstrate
+Due to their approximate nature, online learning models often demonstrate
 limited accuracy compared to their batch counterparts. Ensemble methods
 have been shown to vastly improve the bias \& variance characteristics
 of a wide range of models \cite{ensemble-methods-dietrich} and have therefore
@@ -267,7 +307,11 @@ work that deals with both online bagging and boosting proposed by \citet{Oza2001
 
 \subsection{Online Bagging}
 
-The bagging model proposed by \citet{Oza2001online} and further explored in
+Briefly, bagging works by training an ensemble of learners in parallel,
+each trained on a bootstrap sample~\cite{bootstrap} of the original dataset.
+The predictions of each learner are averaged to produce the final outcome.
+
+The online bagging model proposed by \citet{Oza2001online} and further explored in
 \cite{online-bagging-experiments} is an intuitive algorithm, listed in Algorithm
 \ref{alg:ozabag}. We make use of this algorithm in \uncertaintrees.
 
@@ -282,37 +326,45 @@ The bagging model proposed by \citet{Oza2001online} and further explored in
 	\Output{hypotheses $h_t$ trained on $(x,y)$.}
 
 	\ForEach(\tcp*[f]{in order $t \in [1,s]$}){$h_t \in \ensemble$}{
-		k \define Poisson(1) \;
-		Assign weight k to $(x,y)$ \;
+		$k$ \define Poisson($\lambda = 1$) \;
+		Assign weight $k$ to $(x,y)$ \;
 		$h_t \define L_o(h_t, (x,y))$
 	}
 	\Return $\widehat{y}$ \;
 \end{algorithm}
 
 The main insight of the algorithm, commonly referred to as \emph{OzaBag}, is that we can approximate the binomial distribution
-used to determine whether a sample will be included the bootstrap\todo{First time we mention bootstrap?}
-sample using a Poisson distribution, as the distribution of bagging sample sizes, $K$, tends
-to a Poisson(1) as the number of samples $N \rightarrow \infty$. To use bagging online then
+used to determine whether a sample will be included the bootstrap
+sample using a Poisson distribution. The distribution of bagging sample sizes, $K$, tends
+to a Poisson($\lambda = 1$) as the number of samples $N \rightarrow \infty$. To use bagging online then,
 for each incoming example and
-for each member of the ensemble \ensemble, we draw a sample from a Poisson(1). We use to the drawn sample k to modify the weight of the incoming instance, and train the algorithm using the updated weight. \citet{Oza2001online} prove that as the number of samples N grows
+for each member of the ensemble \ensemble, we draw a sample from a Poisson($\lambda = 1$). We use to the drawn scalar $k$ to modify the weight of the incoming instance, and train the algorithm using the updated weight. \citet{Oza2001online} prove that as the number of samples N grows
 to infinity, the distribution of the online training set will converge to that of the batch algorithm.
 
-This strategy has been adapted and extended in multiple online bagging methods. \citet{online-bag-imbalance}
+This algorithm has been adapted and extended in multiple online bagging methods. \citet{online-bag-imbalance}
 make use of this strategy to deal with the class imbalance problem in online manner. Their strategy
 is to adjust the $\lambda$ parameter of the Poisson distribution so that data points with underrepresented
 classes have a larger effect on the training. \citet{new-ensemble-methods} provide two alternative
-bagging methods with the purpose of dealing with concept drift, one that uses tree of different
-sizes, and one that makes use of the ADWIN \cite{adwin} change detection method on top Oza's bagging algorithm. Leveraging Bagging \cite{leveraging-bagging} is an improvement to the previous model,
+bagging methods with the purpose of dealing with concept drift, one that uses trees of different
+sizes, and one that makes use of the ADWIN \cite{adwin} change detection method on top Oza's bagging algorithm to detect when a concept drift has occurred. Leveraging Bagging \cite{leveraging-bagging} is an improvement to the previous model,
 where the authors increase the $\lambda$ parameter of the Poisson distribution to ``increase the diversity of the weights`` and use the method of \citet{multiclass-codes} to handle multi-class cases
 as binary classification using error correcting codes.
 
 \subsection{Online Boosting}
 
+Boosting works by combining the predictions of many weak learners to produce a
+strong learner. The process adjusts the weight distribution of the data points
+at each iteration, assigning more weight to ``difficult'' instances that the
+current ensemble mis-predicts, forcing subsequent iterations to focus on those
+examples. The difficulty in online boosting is that
+instances arrive sequentially, making it challenging to maintain a distribution
+of weights.
+
 Online boosting has found more widespread use compared to online bagging ensembles,
 as it's been used successfully in many computer vision applications, with a focus on
 object tracking \cite{online-boost-cv4, online-boost-cv, online-boost-cv3, online-boost-cv2, online-boost-cv5, online-boost-cv-6}.
 As a result many different boosting algorithms have been proposed, some, as the ones
-mentioned in tracking aiming at a specific application, and others that are more general.
+mentioned in tracking, aimed at a specific application, and others that are more general.
 
 We will focus on the original algorithm proposed by \citeauthor{Oza2001online},
 which we also make use of in \boostvht,
@@ -326,21 +378,21 @@ The learning process is similar to that of OzaBag (Algorithm \ref{alg:ozabag}), 
 algorithm is strictly sequential, and the weight the example takes depends on whether
 the previous member of the ensemble was able to correctly classify the example.
 Specifically, the algorithm tries to assign half the total weight to the misclassified
-example on the next stage, and the other half to the correctly classified ones.
+examples on the next stage, and the other half to the correctly classified ones.
 This is done by keeping track of the $\lambda$ parameter sums for the two cases,
-correct and incorrect classification, and update the weight of an example
+correct and incorrect classification. We update the weight of an example
 before it passes on to the next member of the ensemble accordingly, increasing
 the weight every time is incorrectly classified, and decreasing it every time it
-is correctly classified.  Something to note about OzaBoost is that it requires
+is correctly classified.  One thing to note about OzaBoost is that it requires
 that we set the number of boosting rounds from the beginning, unlike the
 batch AdaBoost algorithm.
 
 Despite its popularity, OzaBoost lacks rigorous theoretical guarantees.
-The first attempt to formalize online boosting was made by \citet{online-boosting-theoretical}
+The first attempt to formalize online boosting was made by \citet{online-boosting-theoretical}.
 They re-visit the assumption made about the performance of the weak
 learners, namely that any weak learner will be able to
 do better than random guessing, as it is not a realistic assumption
-for the online setting where learners are more limited. They also
+for the online setting where learner accuracy is more limited. They also
 provide a way to not have to set the number of learners in the ensemble beforehand,
 by dynamically assigning voting weights to learners.
 However, doing so requires the setting of another parameter $\gamma$,
@@ -407,12 +459,12 @@ parallel online boosting, while maintaining their guarantees.
 \section{Software}
 \label{sec:bg-ol-software}
 
-Compared to the multitude of options available for batch learning, \todo{Cite?} the availability
-of open-source software for online learning is relatively limited. In this section we will
-mention the most popular libraries for online learning, and point out the ones we have used to develop
-our work.
+Compared to the multitude of options available for batch learning, the availability
+of open-source software for online learning is relatively limited. In this section we
+mention the most popular libraries for online learning, and point out the ones we have have used
+and extended during this thesis.
 
-Perhaps the first online learning library released is the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the VFDT algorithm.
+Perhaps the first online learning library released is the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the Very Fast Decision Tree (VFDT) algorithm (which we describe in Chapter \ref{sec:bg-dt-online-trees}).
 It includes the VFDT and its variations, as well as data pre-processing tools.
 
 One of the most established open-source frameworks for online learning is MOA, which stands
@@ -422,9 +474,9 @@ a graphical interface to perform repeatable experiments. MOA is designed in the
 vein of WEKA \cite{weka} and includes interfaces that allow inter-operability
 between the algorithms available in WEKA and MOA. Like WEKA, MOA has an extensible
 design that allows developers to re-use parts of the existing algorithms to develop
-new methods, and easily evaluate new methods using many of the methods mentioned
+new methods, and easily evaluate new methods using the evaluation strategies mentioned
 in Section \ref{sec:bg-ol-evaluation}, by adhering to a simple API. In our work,
-we have used MOA to implement the algorithms of \uncertaintrees and as a comparison
+we have used MOA to implement the algorithms of \uncertaintrees and as a baseline comparison
 in \boostvht. Other single-worker online learning libraries
 include LIBOL~\cite{libol} and more recently scikit-multiflow~\cite{sk-multiflow}.
 

@@ -4,13 +4,13 @@
 Decision trees are one of the most important and successful algorithms
 in machine learning. They have seen widespread adoption in practically
 every area of machine learning, from their original domain in classification
-and regression, to ranking, semi-supervised learning, survival analysis,
-quantile regression, and unsupervised learning\todo{Cite!}. In this chapter
+and regression, to ranking~\cite{lambdarank}, semi-supervised learning~\cite{semi-super-trees}, survival analysis~\cite{survival-forests},
+quantile regression~\cite{meinshausen2006quantile}, and unsupervised learning~\cite{tree-clustering}. In this chapter
 we will provide a brief review of the literature on decision trees in
 areas that are relevant to our work, namely ensembles of decision
 trees and online decision trees. For a comprehensive review of
 decision tree literature we refer the reader to the monograph
-by \citet{decision-trees-book} or the introductory textbook by \citet{esl}.
+by \citet{decision-trees-book} or the extended survey by \citet{tree-survey}.
 
 \section{Learning Algorithms}
 \label{sec:bg-dt-learning-algorithms}
@@ -43,8 +43,9 @@ node impurity measure like the Gini index or the cross-entropy, defined as:
 	\end{split}
 \end{equation}
 
+\noindent
 where $k$ the class, $m$ the node and $\hat{p}_{mk}$ the proportion of
-the observation for class $k$ in $m$.
+the observations for class $k$ in the node $m$.
 
 While one could keep growing a decision tree until it perfectly fits the data,
 that will lead to overfitting and bad generalization. Therefore
@@ -59,11 +60,8 @@ nodes, or having a minimum number of examples in each terminal node
 \label{sec:bg-dt-ensembles}
 
 The success and popularity of decision trees comes in large part
-from their use in model ensembles. An ensemble is a collection
-of models whose decisions are aggregated to improve the model's
-performance.
-
-The two dominant paradigms in model ensembles are \emph{bagging} \cite{bagging} and
+from their use in model ensembles.
+As mentioned in Section \ref{sec:bg-ol-ensembles}, the two dominant paradigms in ensemble learning are \emph{bagging} \cite{bagging} and
 \emph{boosting} \cite{boosting-schapire, boosting-freund-schapire}. Both
 methods can be interpreted using a resampling procedure. Bagging is
 based on the bootstrap \cite{bootstrap} resampling method and will re-use samples
@@ -71,21 +69,22 @@ to train the members of the ensemble, and average their predictions.
 % Bagging can be used to reduce both the bias and variance of a learning method.
 Boosting methods on the other hand will assign increased weights to the
 hardest instances in the data. In the ``AdaBoost.M1'' version of the algorithm,
-a new ``weak'' learner is trained at each iteration, and a weighted sum of
+a new weak learner is trained at each iteration, and a weighted sum of
 the decisions of each learner is taken to produce the final prediction.
 Further work by \citet{gradient-boosting-breiman} established a statistical framework
 for boosting and formalized \emph{gradient boosting} as gradient descent in function
 space.
 
 Decision trees have been very successfully used as parts of either bagging
-or boosting ensembles \cite{hundreds-classifiers}. Their characteristics as a fast non-linear learner,
-with high variance fit well both the bagging and boosting paradigms.
+or boosting ensembles \cite{hundreds-classifiers}. Their characteristics as a fast
+non-linear learner
+with high flexibility fit well both the bagging and boosting paradigms.
 The \emph{random forest} algorithm uses bagging to train an ensemble
 of randomized trees and combine their predictions, while gradient boosted trees
 uses a combination of trees and gradient boosting to produce
 accurate learners. In the following we give a brief overview for each method,
-and refer the reader to \cite{random-forest-survey} and \cite{biau-optimization} for recent surveys on
-random forests and gradient boosting respectively, or the monograph by \citet{esl}.
+and refer the reader to \cite{random-forest-survey, tree-survey} and \cite{biau-optimization} for recent surveys on
+random forests and gradient boosting respectively, or the introductory monograph by \citet{esl}.
 
 \subsection{Random Forests}
 \label{sec:bg-dt-random-forests}
@@ -101,9 +100,10 @@ Following the notation in \cite{random-forest-survey}, the algorithm works by gr
 $M$ randomized trees, each on a sample from the original dataset $a_n$. The sample
 $a_n$ can be taken with or without replacement, although usually it is a boostrap
 sample~\cite{bootstrap} with a size equal to the original dataset. In the original
-algorithm by \citeauthor{random-forests}, the trees are grown using the CART criteria\todo{Ensure we have introduced CART trees!}, with the difference that we limit the number of features being
+algorithm by \citeauthor{random-forests}, the trees are grown using the CART criteria,
+with the difference that we limit the number of features being
 considered for the splits, with \citeauthor{random-forests} selecting one feature or
-$log_2{p} + 1$, while \citeauthor{random-forest-survey} recommend using $\lceil p/3 \rceil$,
+$log_2{p} + 1$, while \citeauthor{random-forest-survey} recommend using $\lceil p/3 \rceil$;
 see \cite{rf-parameters} for an investigation of RF parameter settings.
 For the regression task the predictions of the forests are calculated
 by taking the average prediction of all trees, while for classification
@@ -122,7 +122,8 @@ over the network, with a resulting high communication cost.
 and merge the votes, or one could make use of the bag of little bootstraps
 to train the models \cite{bag-of-boostraps}. Alternatively, we can create split
 histograms on data partitions and communicate those over the cluster to determine the
-best split for each leaf, similar to how trees are grown for XGBoost \cite{xgboost}.
+best split for each leaf, similar to how trees are grown for distributed
+gradient boosted tree methods~\cite{xgboost, lightgbm}.
 
 Second, the fact that for each tree some samples from the dataset are not
 used to train it, known as \emph{out-of-bag} (OoB) samples, creates opportunities
@@ -134,14 +135,13 @@ the out-of-bag sample to estimate \emph{variable importance}.
 variable importance, where using the OoB instances for a tree, we
 randomly permute the values a feature, and make predictions
 for the permuted and original data. We take the average
-of the difference between the OoB error between the permuted
+of the difference of the OoB error between the permuted
 and original data and use that as an estimate of the importance
-of the variable. \citet{random-forest-survey} note the
-issues this approach faces with correlated variables, because the
+of the variable. \citet{random-forest-survey} note that this approach has issues with correlated variables, because the
 algorithm tests variables in isolation rather than conditional
 to each other.
 Finally, \citet{johansson2013conformal} make use of the OoB samples to provide
-inductive conformal prediction estimates without the need for a
+uncertainty estimates in inductive conformal prediction, without the need for a
 validation set, a property we exploit in \uncertaintrees as well.
 
 \subsection{Gradient Boosted Trees}
@@ -162,9 +162,7 @@ of the optimization process of GBTs by \citet{biau-optimization}.
 
 The gradient boosted tree model consists of an ensemble of decision trees,
 which are trained in an additive manner. At each iteration a new tree is added
-to the ensemble, chosen so that it minimizes an objective.
-
-\todo{Model definition. How original can we keep this? Combine Biau with XGBoost?}
+to the ensemble, chosen so that it minimizes an objective function.
 
 We use the
 regularized objective formulation used
@@ -180,11 +178,11 @@ The objective function is shown in Eq. \ref{eq:gbt-objective}
 \end{equation}
 
 \noindent
-where $l$ is a differentiable loss function and $\Omega$ is a regularization term
+where $l(\cdot, \cdot)$ is a differentiable loss function and $\Omega$ is a regularization term
 that penalizes complex models. The regularization term takes into consideration
 the number of leaves $T$ and the norm of the weights at the leaves $w$. This helps
 smooth the weights to avoid overfitting. This objective defined in XGBoost
-has then been used in follow-up GBT learning systems like LightGBM and 
+has then been used in follow-up GBT learning systems like LightGBM and
 DimBoost \cite{lightgbm, dimboost}.  A note here is that XGBoost
 assumes that the loss function is twice differentiable in order
 to calculate the Hessian analytically for each loss function.
@@ -193,8 +191,8 @@ to use Nesterov's first-order accelerated gradient descent method
 \cite{nesterov-book} to produce gradient boosting models of similar
 accuracy, while being much more sparse in the number of components.
 In distributed training this would have the added benefit of reducing
-the amount of data being communicated by half, as we'd only need to
-communicate first-order gradients and not Hessians, as we will explain
+the amount of data being communicated by half, as we would only need to
+communicate first-order gradients and not Hessians, as we explain
 in the following section.
 
 
@@ -218,18 +216,19 @@ partition of each leaf and create a gradient histogram for each feature for that
 
 In its simplest form, a gradient histogram gives us the sum of gradients at a leaf,
 given a feature value, that is, $\sum_{j}(G_i | x_i(f) = f_j)$, where $x_i$ is a data point
-that belongs to the current leaf and  $G_i$ is the gradient value of $x_i$ and $j$ is an
+that belongs to the current leaf,  $G_i$ is the gradient value of $x_i$ and $j$ is an
 indicator over the unique values of the feature $f$. In other words, it gives us the
 sum of the gradients of all data points in the leaf for a specific value of a given
 feature $f$.
 
-This enumeration of gradient-feature value combinations, will give us a value for every unique value
-of a feature which can become computationally impractical for real-valued features.
-What implementations like XGBoost and LightGBM use instead is \emph{quantized histograms},
+Enumerating every gradient-feature value combination, requires that we calculate
+a gradient sum for each unique value
+of a feature. This can quickly become computationally impractical for real-valued features.
+Systems like XGBoost and LightGBM instead use \emph{quantized histograms},
 where we accumulate gradients in histogram buckets for every feature. For example
 we would sum the gradients of all data points whose $f_1$ value is $[0, 5)$, for all
 data points whose $f_1$ value is $(5, 10]$ etc. until we have iterated over
-the entire partition for a leaf.\todo{Mention distributed boosting by Lazarevic}
+the entire partition for a leaf.
 
 To determine the bucket ranges we
 can use \emph{quantile sketches} \cite{greenwald2016quantiles} that approximate
@@ -245,15 +244,15 @@ There exist sketches where we select the number of buckets that
 will be used to represent the CDF, like the ones proposed by \citet{BenHaim2010parallel}
 or it is derived from the approximation error we choose for the sketches, for example
 for the sketches used by XGBoost or by the state-of-the-art KLL sketch \cite{karnin2016kll}
-used by DimBoost \cite{dimboost}.
+used by DimBoost \cite{dimboost} and in our own work in Papers \uncertaintreesNum and \blockgbtNum.
 
 
-The selection of buckets can be done either at the beginning of training, taking the
+The selection of bucket ranges can be done either at the beginning of training, taking the
 overall feature CDF, or at every leaf taking the CDF of each feature using only the
 partition for that leaf. \citet{xgboost} show that by selecting the buckets for every
 leaf separately, we can achieve the same level of accuracy, while using histograms with a higher approximation error, and hence reducing the memory footprint of the algorithm.
 
-Once the buckets have been determined for each feature, we use them to create
+Once the bucket ranges have been determined for each feature, we use them to create
 the empty gradient histograms. At this point we have a gradient value for each data point, so
 we go through each feature and add the data point's gradient value to the gradient
 histogram bucket
@@ -262,7 +261,7 @@ For example, for a data point $x_i$ with a feature value $f_1 : 0.5$, we would a
 gradient value to the
 the bucket $[0, 5)$ of the gradient histogram for $f_1$.
 When we are done iterating, each feature will have a corresponding gradient histogram,
-whose sum is equal to the sum of gradients for the leaf partition.
+whose sum is equal to the sum of gradients for the leaf.
 
 We can then use these gradient histograms to determine the optimal split point for the
 leaf, by calculating the updated loss for each split:
@@ -272,7 +271,7 @@ leaf, by calculating the updated loss for each split:
 \end{equation}
 
 where $I_L, I_R$ determine the data points that end up to the left and right side of the split
-respectively, and $I$ is the complete set of data for the partition. At this point, to determine
+respectively, and $I$ is the complete set of data for the leaf partition. At this point, to determine
 the best split we need to simply iterate through all the feature-split-point combinations
 and rank every candidate according to their loss reduction (or \textit{gain}) and select the
 best one.
@@ -283,9 +282,9 @@ To mitigate this, we can apply efficient boosting approaches that try
 to reduce the number of features being examined. Examples include LazyBoost \cite{lazyboost}
 that uniformly subsamples the set of features,
 bandit methods \cite{bandits-boosting} that use information from previous iterations, or other adaptive
-methods like Laminating \cite{laminating} that determines the best feature by incrementally
-reducing the number of features being considered and increasing the number of examples being
-examined.
+methods like Laminating \cite{laminating} that determines the best feature in multiple rounds, by incrementally
+halving the number of features being considered and doubling the number of examples being
+included in the gradient calculations.
 
 \section{Online Decision Trees}
 \label{sec:bg-dt-online-trees}
@@ -300,19 +299,19 @@ alternatives have been proposed.
 
 By far the most popular online decision algorithm for classification is the Hoeffding Tree (HT) \cite{vfdt},
 which has served as the basis for most of the follow up work on online decision
-trees. The aim of the HT is to create an online algorithm that will converge
-to the batch algorithm given enough samples.
+trees. The aim of the HT is to create an online decision tree algorithm that will converge
+to its batch equivalent given enough samples.
 The learning in an HT, or as \citet{vfdt} name it, the Very Fast Decision
 Tree (VFDT), happens only at the leaves, and every data point is only utilized
-once i.e. th HT is a single-pass algorithm. The leaves accumulate statistics
-with the purpose of determining the best split. The tree gets its
+once, i.e. the HT is a single-pass algorithm. The leaves accumulate statistics
+with the purpose of probabilistically determining the best split. The tree gets its
 namesake from the use of the Hoeffding bound to determine if we have accumulated
-enough information at a leaf to trigger a split.
+enough information at a leaf to trigger a split with high confidence.
 
 Following the description from \citet{vfdt}, the Hoeffding bound \cite{hoeffding-bound} is a probability inequality that allows
-us to probabilistically  bound the true mean of a random variable $r$ for which we have
+us to probabilistically bound the true mean of a random variable $r$ for which we have
 made $n$ independent observations and computed their sample mean, $\bar{r}$. Given
-the range of the variable, $R$, the Hoeffding bound stats that with probability
+the range of the variable, $R$, the Hoeffding bound states that with probability
 $1-\delta$, the true mean of the variable $r$ will be at least $\bar{r}-\epsilon$, where
 $\epsilon$ is defined as:
 
@@ -320,10 +319,10 @@ $\epsilon$ is defined as:
 	\epsilon = \sqrt{\frac{R^2ln(1/\delta)}{2n}}.
 \end{equation}
 
-The Hoeffding bound is then used to determine with a high degree of certainty when
+In VFDT, the Hoeffding bound is used to determine with a high degree of certainty when
 it is time to split a leaf. Let $G(X_i)$ be the measure used to choose the feature
-to split on, as we mentioned in Section \ref{sec:bg-dt-learning-algorithms}, this can be
-information theoretic measures or the Gini index. Ideally we want the feature we select given a limited sample of $n$ observations, to be the same as would be chosen given infinite examples.
+to split on. As we mentioned in Section \ref{sec:bg-dt-learning-algorithms}, this can be
+information theoretic measures like the cross-entropy or the Gini index. Ideally we want the feature we select given a limited sample of $n$ observations, to be the same as would be chosen given infinite examples.
 The Hoeffding bound allows us to achieve that with high probability by applying
 it to determine the maximum possible difference between the best and second best
 features to split on. Specifically, let $\bar{G}(X_a)$ be the heuristic value for the
@@ -341,11 +340,11 @@ do instead, for example in the implementation of the algorithm in the MOA librar
 is to only check if the Hoeffding bound is satisfied periodically, for example
 every 200 samples. Another parameter of the algorithm is the probability of an error,
 $\delta$. This parameter can have a large effect on the final tree, as setting it
-too high can lead to early splits being taken that end up being sub-optimal, as so
+too high can lead to early splits being taken that end up being sub-optimal, and as a result,
 values in the order of $10^{-7}$ are often used \cite{data-stream-mining}.
 
 HT was designed for the classification setting, where handling discrete attributes
-is straightforward, we can just keep a table of frequencies for classes and feature
+is straightforward: we can just keep a table of frequencies for classes and feature
 values. The situation
 is different for continuous attributes however, where we need to maintain per-class
 information about the values. In the worst case we would need to maintain the class
@@ -353,10 +352,10 @@ frequencies for every unique value in a continuous feature, something that is im
 for online learning, where datasets are potentially unbounded and the memory footprint
 of the algorithms should remain as small as possible. For features with many repeated
 values it is possible to use a binary tree structure with counters that allows for
-fast storage of the values, however has large memory cost. Alternatives include
+fast storage of the values, however this again has a large memory cost. Alternatives include
 using online histograms or quantile sketches \cite{greenwald2016quantiles}
 to maintain approximations of the Cumulative Distribution Function of
-each feature, or approximating the distribution of feature using a Gaussian.
+each feature, or approximating the distribution of each continuous feature using a Gaussian.
 We provide a more in depth explanation of how quantile sketches can be used
 in Section \ref{sec:bg-dt-gbts} and refer the interested reader to Chapter 4 of \citet{data-stream-mining} for details on the other methods.
 
@@ -373,7 +372,7 @@ at the cost of added computation and memory necessary to maintain
 the sufficient statistics for internal nodes and re-evaluate split
 decisions.
 
-However, \citet{vfdt-mcdiarmid} claim that the assumptions made
+In a contrasting view, \citet{vfdt-mcdiarmid} claim that the assumptions made
 by the Hoeffding bound-based algorithms are commonly violated as the bound assumes
 real-valued data, and the fact that measures like the Gini index and information
 gain cannot be expressed as sums of elements. As an alternative they propose
@@ -385,10 +384,11 @@ and provides a bound on the information gain difference between two potential
 split attributes based on the Gaussian distribution.
 
 One of the few online decision tree algorithms that is aimed at regression
-is the Fast Incremental Model Tree (FIMT) algorithm by \citet{fimt}. FIMT
+is the Fast Incremental Model Tree (FIMT) algorithm by \citet{fimt}, also
+based on the HT. FIMT
 is a model tree, i.e. instead of simply using the average of the labels
-in its leaves to make prediction, it maintains a linear model, which is
-fit on the samples arriving at the leaf, and is then later used for prediction.
+in its leaves to make predictions, it maintains a linear model, which is
+fit on the samples arriving at the leaf, and is then used for prediction.
 The merit of a split is calculated based on the Standard Deviation Reduction (SDR),
 similarly to batch regression trees like the M5 model \cite{m5-tree}, defined as:
 
@@ -412,7 +412,7 @@ probability of a split being optimal, the authors again use the Hoeffding bound
 on the SDR ratio of the two best splits which will be in $[0, 1]$ range.
 The linear models at the leaves are perceptron models, updated using stochastic
 gradient descent.  Finally, FIMT includes a change detection system in order to
-adapt to concept drift \todo{Make sure we've defined concept drift before.}
+adapt to concept drift
 based on the Page-Hinckley change detection test~\cite{ph-test, ph-test2}.
 
 \todo{Online RFs?}
@@ -425,20 +425,20 @@ the statistics are maintained only at the leafs, with the exception of \cite{efd
 and heuristics that take into consideration the conditional distribution of the
 features given a class are used to determine the splits. \citet{mondrian-forests-original}
 proposed a new class of algorithm based on Mondrian processes \cite{mondrian-process}
-that provides an new way to train online trees.
+that provides an new way to train decision trees online.
 
 Mondrian processes are a continuous-time
 Markov process that form hierarchical partitions of the feature space $\mathbb{R}^D$.
 The partitions are nested and each subsequent partition refines its parent. While
 these processes are non-parametric and define infinite partitions, Mondrian trees
-restrict them using a \emph{lifetime} parameter $\lambda$, which turns out to be hard to solve,
+restrict them using a \emph{lifetime} parameter $\lambda$.
+This parameter is however hard to tune,
 so the the authors choose instead to stop splitting nodes when the data points
 within them all have the same class value. Compared to regular decision trees,
 Mondrian trees have two main differences: The split decisions are always within
 the range of observed data, i.e. the split decision create ``boxes'' in feature
 space and not axis parallel cuts, and like the Extremely Randomized Tree algorithm
-\cite{ert}, the splits are chosen uniformly at random and independently of the
-class label. The main property that make Mondrian trees possible to train
+\cite{ert}, the splits are chosen uniformly at random. The main property that makes Mondrian trees possible to train
 online is \emph{projectivity}. We can grow a new tree by sampling from a restricted
 distribution of Mondrian trees that have already been trained, extending the tree
 to include the new data. The Mondrian tree distribution is in this sense ``self-consistent''
@@ -447,7 +447,7 @@ sampled tree in an online manner. The original Mondrian trees are aimed at class
 and follow up work extends them to handle regression as well \cite{mondrian-forests-regression}.
 
 One main characteristic of Mondrian trees is that they are able to determine the full
-predictive posterior distribution of the dependent. This means that it is able to
+predictive posterior distribution of the dependent. This means that they are able to
 produce a distribution of the form $p_T(y |\mathbf{x}, \mathcal{D}_{1:N})$, where
 $y \in {1,..., K}$ for the multi-class classification scenario, or $y \in \mathbb{R}$
 for regression. For classification the posterior is modeled as a hierarchy
@@ -459,10 +459,10 @@ The main disadvantage of Mondrian forests is their computational cost. The model
 requires that learning happens at all levels of the tree, unlike most of the HT
 algorithms where learning only occurs at the leaf level. Because a complicated
 model of the posterior needs to be updated, the computational cost of the algorithm
-increases with each incoming data point is is $\mathcal{O}(\log n)$ for the $n$'th
+increases with each incoming data point and is $\mathcal{O}(\log n)$ for the $n$'th
 data point, in other words it has a cost of $\mathcal{O}(\log N!)$ to train N
 data points. In addition, the online version of the algorithm needs to maintain
-all data points in at the leafs in order to be be able to update the distributions.
+all data points at the leafs in order to be able to update the distributions.
 This makes its memory cost prohibitive for a streaming setting where with limited resources.
 
 In our work we use Mondrian Forests as the state-of-the-art comparison in \uncertaintrees
