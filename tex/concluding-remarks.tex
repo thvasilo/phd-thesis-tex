@@ -3,7 +3,7 @@
 In this thesis we have proposed efficient algorithms for graph node
 similarity and decision tree learning. Our goal was to create
 algorithms that scale out regardless of input size and to do so
-we have used three design goals: reduce the amount of computation
+we set three design goals: reduce the amount of computation
 necessary to produce a result, reduce the amount of communication
 during distributed learning, and bound the memory use of the algorithms,
 making it possible to train them on unbounded datasets.
@@ -15,14 +15,14 @@ We close the chapter with potential future work directions and open
 problems.
 
 \section{Summary of Results}
-
+\todo{Haven't really placed the work in the context of SOTA here...}
 We first proposed an approximate way to calculate similarities between
 nodes in a graph, and discover concepts in the derived similarity
 graph. Our method dramatically reduces the computational cost
-by localizing computation in node neighborhoods, and taking advantage
+by localizing computation in the nodes' neighborhoods, and taking advantage
 of the sparse graph structure to further optimize the computation with controllable
 error. We demonstrated the generality of the approach in several domains and presented
-qualitative as well as quantitative evidence of its accuracy. In addition we demonstrate
+qualitative as well as quantitative evidence of its accuracy. In addition, we demonstrate
 the scalability of the algorithm by training on one of the biggest text datasets
 available in minutes.
 
@@ -51,8 +51,8 @@ the art in terms of accuracy, and an order of magnitude improvement
 in the runtime.
 
 Finally we presented a new algorithm for distributed gradient boosted tree
-learning that enable a new dimension of scalability, allowing for scale-out
-across both the data point and feature dimensions. We make use the Quickscorer
+learning that enables a new dimension of scalability, allowing for scale-out
+across both the data point and feature dimensions. We make use of the Quickscorer
 algorithm to achieve efficient block-distributed prediction, and make use
 of the parameter server's flexibility to exploit data sparsity and achieve
 order of magnitude improvements in the communication cost of the training process.
@@ -67,7 +67,7 @@ question posited for our thesis which we reproduce here:
 \end{displayquote}
 
 \noindent
-This dissertation has provided tackled this question by:
+This dissertation has tackled this question by:
 \begin{itemize}
 	\item Using approximate solutions and bounded error subsampling of edges
 	to produce a vertex similarity algorithm with a scalable
@@ -86,7 +86,7 @@ This dissertation has provided tackled this question by:
 
 \section{Future Directions}
 
-We identify several aspects of work that can be expanded upon and improved,
+We identify several aspects of our work that can be expanded upon and improved,
 targeting specific limitations of the model. For our work on graph node similarity
 our next targets are to create hierarchical structures of concepts, thereby creating
 composable representations in an unsupervised manner. The main challenge for this

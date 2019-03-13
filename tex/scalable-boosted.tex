@@ -1,8 +1,8 @@
-
 In this chapter we provide an overview of our work on scaling boosted tree
 learning. We tackle the problem in two different domains: online boosting
 (\boostvht) and batch gradient boosting (\blockgbt). We develop algorithms
-that are optimized for the distributed setting 
+that are optimized for the distributed setting by being communication efficient
+and exhibiting good scaling characteristics.
 
 \section{Background}
 \label{sec:scalable-boosted-background}
@@ -46,8 +46,10 @@ instead of the data-parallel approaches used in the batch setting.
 We make use of the Vertical Hoeffding Tree (VHT) algorithm \cite{kourtellis2016vht} which is a model-parallel
 extension of the online Hoeffding tree algorithm \cite{vfdt}, often referred to as
 Very Fast Decision Tree (VFDT).
+We call our algorithm BoostVHT.
+
 We provided a description of the VFDT algorithm in Section \ref{sec:bg-dt-online-trees}.
-The VFDT algorithm will sort instances down the tree and update the statistics for the
+Briefly, the VFDT algorithm will sort instances down the tree and update the statistics for the
 leaf the instance ends up in. This separation of duties allows for the scalable design of
 VHT: the algorithm uses two components, one called the \emph{model aggregator}
 that is responsible for sorting instances to leafs and maintaining the model, and
@@ -71,7 +73,7 @@ the training in parallel and asynchronously in a set of local statistics workers
 
 We propose three optimizations over the original VHT algorithm to improve its
 characteristics for distributed boosting. First, we design our local statistics
-so that the same worker can host statistics from multiple member of the ensemble.
+so that the same worker can host statistics from multiple members of the ensemble.
 This enables to decouple the level of parallelism from the number of learners
 in the ensemble, separating the algorithm's functional (speedup) and non-functional
 (accuracy) aspects.
@@ -83,7 +85,7 @@ number of features. This will dramatically
 reduce the number of messages sent, since we $m \gg p$ in the high-dimensional
 settings we are focusing on. In addition, compared to existing
 parallel boosting methods like AdaBoost.PL \cite{adaboost-pl} that need to communicate the complete
-models between update, we only need to communicate the split decisions which are
+models between each update, we only need to communicate the split decisions which are
 much more compact (3 floating point values instead of a complete tree data structure).
 Finally, our approach allows us to send each attribute slice only once to
 each worker, as it suffices for each subsequent learner after the first
@@ -113,7 +115,7 @@ select the optimal split for each leaf.
 \label{subsec:block-gbt-prediction}
 
 In the row-distributed setting, each worker has access to all the features for the
-horizontal slice of the data they are responsible for. This allows us them to determine
+horizontal slice of the data they are responsible for. This allows us to determine
 the exit node for each local data point without any communication.
 That is not the case however
 for block-distributed data where each worker only has access to parts of each data
@@ -125,7 +127,7 @@ as we could have millions of features leading to impractical communication
 costs. In our approach we develop a novel use of the Quickscorer \cite{quickscorer} algorithm
 that gives us provably correct and efficient block-distributed predictions.
 
-Briefly, in Quickscorer the exit node can be determined by applying the bit-wise
+Briefly, in Quickscorer the exit node for a data point dropped down a decision tree can be determined by applying the bit-wise
 \AND operation between specific bit-strings for every internal node.
 These bit-strings are of length $|L|$, where $L$ the set of leaves, and
 every zero indicates that a leaf node becomes impossible to reach if the node's
@@ -138,13 +140,13 @@ prove that the left-most bit set to one in \bitstring will indicate the exit nod
 
 We adapt the above algorithm to work in the block-distributed setting. Each worker
 now only has access to particular range of features for a subset of the data points.
-So it an only evaluate the conditions of the tree that correspond to its slice
+So it can only evaluate the conditions of the tree that correspond to its slice
 of the features. We create local bit-strings at each worker, one for each example.
 These bit-strings have the same properties as in the original Quikscorer algorithm,
 however can only eliminate leafs that are children of internal nodes that correspond
 to the features available at that worker. To fully determine the output for each
 data point, the workers that hold data for the same horizontal slice will need
-to aggregate the bit strings for each data point. We do this by utilizing the
+to aggregate their bit strings for each data point. We do this by utilizing the
 parameter server \cite{muPS} architecture: Each server is responsible for a
 one horizontal slice of the data. The workers that hold the different parts of
 a horizontal slice, all send their bit-strings to the same server.
@@ -156,7 +158,9 @@ these aggregations happen does not affect the result, and the overall aggregatio
 will be equal to the aggregation of the partial aggregations. This ensures that
 our predictions will be correct. By using this method we can determine the exit
 nodes for each data point, and from that the corresponding gradients that we need
-for the next step of histogram aggregation.
+for the next step of histogram aggregation. By only communicating bit-strings
+and performing bitwise operations that are hardware optimized we ensure that
+the communication and computation cost of this step remains low.
 
 \subsection{Histogram Aggregation}
 \label{subsec:block-gbt-histogram-aggregation}
@@ -197,15 +201,15 @@ Block-distribution introduces another level of complexity into this operation, a
 in that case, no worker has a complete view of any data point. Each worker gets one block,
 that is, a horizontal \emph{and} vertical slice of the data. If we think of the complete
 gradient histograms as a tensor of dimensions $|L| \times |F| \times B$, each worker
-will populate a part of this tensor, across the $L$ and $B$ dimensions, but limited to a specific
-subset of $F$. In \blockgbt, we use a sparse representation of this tensor at each worker, which allows
+will populate a part of this tensor, across the $L$ (leafs) and $B$ (buckets) dimensions, but limited to a specific
+subset of $F$ (features). In \blockgbt, we use a sparse representation of this tensor at each worker, which allows
 us to eliminate the extraneous communication described above. Our experiments show
 that for sparse datasets this brings down the communication cost by multiple orders
 of magnitude.
 
 Once each worker iterates
 through their block of data, they send their partial tensor to one server. Each server
-is now responsible for a range of features, so workers that belong to the same vertical
+is now responsible for a range of features, so workers that belong to the same \emph{vertical}
 slice of data will send their tensors to the same server. Each server ends up having
 a full view of the gradient histograms for a subset of features. The split finding step
 can then be performed using an algorithm similar to the one proposed in \citet{dimboost}.
@@ -218,7 +222,7 @@ algorithm from \boostvht and the block-distributed GBT algorithm from \blockgbt.
 \subsubsection*{Online and Distributed Boosted Trees}
 \label{sec:boostvht-results}
 
-For our online learning experiments we use 10 artificial and 4 real-world datasets. The artificial
+For our online learning experiments of BoostVHT we use 10 artificial and 4 real-world datasets. The artificial
 datasets are generated with different numbers of attributes using one generator
 from a tree-like structure, one that generates random tweet text for a sentiment
 analysis task, and one rotating hyperplane. The baselines we test against are
@@ -236,7 +240,7 @@ difficult, the accuracy of the VHT algorithm deteriorates, while
 BoostVHT is consistently accurate, and is practically equivalent to the single-threaded
 boosting algorithm. At the same time the concurrent and parallel design of the algorithm
 provides us with a speedup of \textbf{45$\times$} on average, compared to the single-threaded
-implementation of MOA.
+implementation of MOA (Shown in Table 2 of the paper).
 
 \begin{figure*}
 	\centering
@@ -288,10 +292,13 @@ near-linear speed-up for our strong scaling experiments.
 \label{sec:block-gbt-results}
 
 To determine the performance gains and limitations of block-distributed approach and
-the sparse communication we use 4 datasets with different sparsity levels. First
+the sparse communication we employ over the dense row-distributed approach, we use 4 datasets with different sparsity levels. First
 we have two highly sparse datasets, URL and avazu with roughly 3,2 million and
-1 million features respectively. Second we use the RCV1 dataset with approximately
-47 thousand features and the dense Bosch dataset with 968 features. 
+1 million features respectively. Second, we use the RCV1 dataset with approximately
+47 thousand features and the dense Bosch dataset with 968 features.
+We implement both approaches from scratch in C++ to ensure a fair comparison.
+We use 12 workers for the row-distributed approach, and 9 workers and 3
+servers for the block-distributed approach.
 
 We measure the
 communication cost in MiB for the dense histograms of the row-distributed approach
@@ -305,9 +312,9 @@ In Figure \ref{fig:block-gbt-hist-size} we can see the benefits of sparse commun
 For the highly sparse URL and avazu datasets the reduction in communication is five and three orders of magnitude respectively. The sparse histograms however introduce additional computational
 cost: unlike dense data structures that are contiguous in memory, sparse structures use
 indirect addressing which makes building and accessing these histograms cache-unfriendly.
-This, in combination with the overhead introduced by the use of the parameter server
+This, in combination with the overhead introduced by the use of the parameter server,
 leads to increased computation time.
-While in sparse datasets the significant gains made by minimizing the communication time
+While in the sparse datasets the significant gains made by minimizing the communication time
 allows us to compensate for the increased computation, that is not the case for
 the dense data, where computation time dominates, as shown in Figure \ref{fig:block-gbt-time}.
 
@@ -329,7 +336,7 @@ the dense data, where computation time dominates, as shown in Figure \ref{fig:bl
 \end{figure}
 
 
-Finally we demonstrate the communication savings possible in terms of the feature sketches. As we mentioned in Section \ref{sec:uncertain-trees-background}, in order to determine the possible
+Finally we demonstrate the communication savings possible in terms of the feature sketches. As we mentioned in Section \ref{sec:bg-dt-gbts}, in order to determine the possible
 split points for each feature, we need to have an estimate of the CDF for each feature. These
 can be calculated once at the beginning of learning, or once per leaf, to get a more accurate representation
 of the CDF in every leaf. \citet{xgboost} show that generating per-leaf (local) split points leads to the same overall
@@ -361,7 +368,7 @@ in the CDF representation.
 
 \section{Discussion}
 
-In this Chapter we have presented our work on scalable boosted
+In this chapter we have presented our work on scalable boosted
 trees. We first developed a model-parallel online algorithm with linear scaling
 characteristics and demonstrated its accuracy advantages over single
 trees and significant runtime gains compared to serial tree ensembles.
@@ -378,6 +385,6 @@ Thus, these studies demonstrated how
 algorithmic co-design with distributed systems can lead
 to optimized runtimes and communication savings, aligning
 this work with our objectives and research question
-defined in Section \ref{intro-question-objectives}
+defined in Section \ref{sec:intro-question-objectives}
 We note however that the benefit of both approaches
 is limited when the dimensionality of the data is low.

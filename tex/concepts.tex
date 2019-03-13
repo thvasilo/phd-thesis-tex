@@ -1,9 +1,11 @@
-In this chapter we provide a summary of our work on scalable graph similarity calculation.
+In this chapter we provide a summary of our work on scalable graph similarity calculation
+and concept discovery.
 We describe the problem and some related work in Section \ref{sec:concepts-background}
-and describe our approach in Section \ref{sec:concepts-main-findings}. As part of our
-results review we present an experiment that was not part of the original work, that
+and describe our approach in Section \ref{sec:concepts-method}. We present our
+findings in Section \ref{sec:concepts-main-findings} where we also present an experiment that was not part of our original work, that
 bridges deep learning with out work to extract visual concepts from images.
-
+We close the chapter with a discussion relating this work to our overall
+research question in Section \ref{sec:concepts-discussion}
 
 \section{Background}
 
@@ -11,12 +13,12 @@ bridges deep learning with out work to extract visual concepts from images.
 
 This work tackles the general problem of determining the similarity between \emph{objects}
 in a data set, which can take many forms: cosine similarity between
-items embedded in a low-dimensional representation \cite{word2vec}, metric learning\cite{metric-learning-survey}, or, as done
+items embedded in a low-dimensional representation \cite{word2vec}, metric learning~\cite{metric-learning-survey}, or, as done
 in this work, by modeling the problem as graph vertex similarity calculation.
-We use the generic term \emph{object} here to emphasize the generality of our
-approach, made possible by modeling the problem as vertex similarity calculation. In the paper we present examples from the linguistic,
-music, and molecular biology domains, and we provide an additional example in this dissertation
-using images as input, in Section \ref{sec:concepts-openimages}.
+We use the generic term \emph{object} to emphasize the generality of our
+approach, made possible by modeling the generality of the graph representation. In the paper we present examples from the linguistic,
+music, and molecular biology domains, and here we provide an additional example using
+generated image tags as input, in Section \ref{sec:concepts-openimages}.
 
 In our approach we model the objects as nodes in graph and their interactions as edges,
 initially weighted by a measure of correlation between the objects. In text for example, the
@@ -32,8 +34,10 @@ to make the computation feasible.
 
 \section{Scalable Vertex Similarity and Concept Discovery}
 
+\label{sec:concepts-method}
+
 We deal with the scalability problem by using a two-step process to calculate similarities.
-We first create a \emph{correlation graph} that models the surface correlations between objects.
+We first create a \emph{correlation graph} that models simple correlations between objects.
 These correlations are easy to extract and do not necessarily hold semantic information.
 For example,
 given a corpus of text we can use a
@@ -51,8 +55,8 @@ As in other works in this thesis, we apply a combination of using approximations
 the computational cost of the method, and develop a distributed algorithm that allows
 us to scale-out learning and take advantage of modern computing clusters.
 
-The first approximation we employ makes use a characteristic that many real-world datasets exhibit,
-that is, there exists a long-tail distribution of interactions between items in a graph. These type
+The first approximation we employ makes use of a characteristic that many real-world datasets exhibit,
+that is, there exists a long-tail distribution of interactions between the items in a graph. These type
 of ``small-world'' graphs, appear in areas like gene co-expression \cite{gene-small-world}, semantic networks \cite{semantic-small-world},
 word co-occurrences \cite{words-small-world} and social networks (see \cite{barabasi-small-world} for further
 examples).
@@ -64,7 +68,7 @@ to solve the computationally intractable all-to-all similarity problem, we inste
 nodes that are one hop apart, keeping the computation local and dramatically limiting the number of
 cost per node in the graph.
 This approximation is what makes the distributed implementation of the algorithm efficient.
-In order to compute for each pair of nodes in a neighborhood their common sets of correlated nodes,
+In order to compute, for each pair of nodes in a neighborhood, their common sets of correlated nodes,
 we need only examine the common sets of incoming edges per node. By distributing our graph
 using the id of the incoming nodes as a key we can perform this computation using a
 self-join operation, which involves no communication of data in the cluster. As a result
@@ -88,7 +92,7 @@ include it in the BG?}
 \label{sec:concepts-main-findings}
 
 In the paper we provide examples of the output produced by the algorithm, and
-perform an evaluation of the similarities produced using a gold standard dataset,
+perform a quantitative evaluation of the similarities produced using a gold standard dataset,
 WordSim-353~\cite{wordsim}. Here we provide a summary of some of the experiments
 presented in the paper, and a new set of results using images as input.
 
@@ -101,7 +105,7 @@ of word pairs, that is the (directed) correlation between the words $i$ and $j$,
 will be $c_{i,j}/c_i$ where $c_{i,j}$ the number of times the words co-occur within
 a window, and $c_i$ the frequency of word $i$ in the corpus. For this experiment we
 select a window size of two, meaning we only take into account bigrams.
-We can some example concepts uncovered by the algorithm in Figure \ref{fig:concepts-billion}.
+We can see some example concepts uncovered by the algorithm in Figure \ref{fig:concepts-billion}.
 
 \begin{figure}
 	\centering
@@ -114,10 +118,10 @@ We can some example concepts uncovered by the algorithm in Figure \ref{fig:conce
 
 We also perform experiments on a music listening dataset created by Celma from
 the Last.fm music service~\cite{celma-long-tail}. The dataset contains 19 million
-track play from 992 users, which we use to create a correlation graph between
+track plays from 992 users, which we use to create a correlation graph between
 artists. The correlation measure $\rho_{i, j}$ is the number of times artist $i$ was followed
 by artist $j$, divided by the total number of plays for artist $i$. Some example
-artist concepts which correspond to the music genres can be seen in Figure
+artist concepts which correspond to music genres can be seen in Figure
 \ref{fig:concepts-artists}.
 
 \begin{figure}
@@ -132,7 +136,7 @@ artist concepts which correspond to the music genres can be seen in Figure
 \label{sec:concepts-openimages}
 
 In this experiment we make use of a combination of deep neural networks and our
-algorithm to uncover visual concepts from raw images. Deep neural networks
+algorithm to uncover visual concepts from images. Deep neural networks
 can be trained on labeled datasets of images to recognize multiple objects
 in an image \cite{deep-learning}. The networks' accuracy creates a unique opportunity
 to generate visual concepts out of raw images: A network trained on labeled dataset
@@ -224,7 +228,7 @@ images that exist in services like Flickr to create visual concepts.
 To provide a quantitative evaluation of the method we made use of the WordSim-353 (WS-353)
 dataset. This dataset includes 353 word pairs that are rated by humans for their
 similarity. This dataset includes unrelated words which presents a problem for
-approach that by design does not calculate similarities for words that are unrelated,
+our approach that by design does not calculate similarities for words that are unrelated,
 as using the graph structure is one of the main ways we can make the computation
 scale. For that reason we use the word pairs that appear both in the evaluation
 dataset \textit{and} exist in our similarity graph. We use the Google n-grams
@@ -238,9 +242,10 @@ cosine similarities of the GloVe~\cite{glove} embedding vectors,
 which was at the time of publication the state of the art embedding
 method. We train our method on a smaller corpus and smaller window than
 the GloVe vectors, but are still able to generate similarities comparable
-to GloVe (0.71 Spearman rank correlation)
+to GloVe (0.71 Spearman rank correlation).
 
 \section{Discussion}
+\label{sec:concepts-discussion}
 
 In this chapter we presented our work on scalable vertex similarity and concept
 discovery. We made use of approximations to dramatically reduce the amount of
@@ -248,7 +253,7 @@ computation, first by using locality in our computations, and then by taking
 advantage of the structure of the graphs to dramatically reduce the number of
 edges that are involved in our similarity calculations, further decreasing the
 computational cost. We designed the algorithm for a distributed setting, and
-by careful design of the similarity calculation step, we are able to minimize
+through careful design of the similarity calculation step, we are able to minimize
 the amount of network communication necessary. Thus, in this work we cover
 two of the three objectives defined in Section \ref{sec:intro-question-objectives}
 and tackle our original research question in the context of vertex similarity.

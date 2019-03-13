@@ -4,6 +4,8 @@ and present some related work in Section \ref{sec:uncertain-trees-background},
 describe the two algorithms developed for this purpose in Section
 \ref{sec:uncertain-trees-method} and present our empirical evaluation
 results in Section \ref{sec:uncertain-trees-results}.
+We close the chapter with a discussion placing the work in the
+context of our original research question in Section \ref{sec:uncertain-trees-discussion}.
 
 \section{Background}
 \label{sec:uncertain-trees-background}
@@ -16,11 +18,11 @@ to have a notion uncertainty in the algorithms' predictions.
 Some of these critical domains also include the requirement that critical decisions
 be made in real-time in a constantly evolving environment, and under a tight computational budget. Examples include the financial domain \cite{streaming-finance} and autonomous vehicles \cite{av-safety}.
 
-These examples demonstrate the need for highly accurate algorithms that be trained
+These examples demonstrate the need for highly accurate algorithms that can be trained
 online, adapt to an evolving environment, and quantify the uncertainty in their
 predictions. Most of the online learning methods available today do not offer
 quantification in their predictions, while most methods that provide uncertainty
-estimate are designed for the batch domain where the data are static and bounded.
+estimates are designed for the batch domain where the data are static and bounded.
 In this work we aim to provide highly accurate algorithms that can be trained
 online, on a sequentially arriving and potentially unbounded dataset, that also
 provide uncertainty estimates for their predictions.
@@ -39,22 +41,22 @@ In this section we provide an overview of the methods developed for this work.
 We provide a brief description of the batch algorithms that we base our algorithms
 on, and proceed to explain how we make use of approximations to transfer them to
 the online domain. We deal with the regression task, and our task is to develop algorithms
-that exhibit what is called \emph{conservative validity} in CP literature. This refers
-to algorithms that produce interval such that the probability of the true value not
+that exhibit what is called \emph{conservative validity} in conformal prediction literature. This refers
+to algorithms that produce predictive intervals such that the probability of the true value not
 being part of the interval is \emph{less than or equal to} $\alpha$, which is referred
 to as the \emph{significance level}. This task is different from quantile regression \cite{koenker2005qr}
-where the objective is the error level to be \emph{exactly} $\alpha$.
+where the objective is for the error level to be \emph{exactly} $\alpha$.
 
 \subsection{Inductive Conformal Prediction}
 
 Conformal prediction (CP) is a meta-algorithm that can add the ability to
-produce prediction regions, that is sets of classes for classification or
+produce \emph{prediction regions}, that is, sets of classes for classification or
 intervals for regression, to any point-prediction algorithm. It works by
 quantifying how surprising or \emph{non-conforming} an instance is compared
 to what the learner has observed and producing a region that is guaranteed
 to contain the true value at a requested degree of certainty. CP is rigorously
 proven to be \textit{valid}~\cite{vovk2005algorithmic}, that is, the probability of error is bounded
-by a pre-selected \emph{significance level}.
+by the pre-selected \emph{significance level}.
 
 While CP was originally proposed as an online learning framework, its computational
 requirements made it impractical for large scale data, as it required to re-train
@@ -67,7 +69,7 @@ and uses this to determine the non-conformity scores of the examples
 and determine the intervals.
 
 However, ICP is an offline method designed for the batch setting and assumes that the complete
-dataset is available at training, time in addition to requiring a external
+dataset is available at training time, in addition to requiring a external
 validation set to use as the calibration set.
 
 
@@ -85,7 +87,7 @@ QRF works by maintaining at the leafs not just the mean label value of all
 the data points that get routed to that leaf, but maintaining a mapping
 from every instance to its label in its leafs. Otherwise, it grows trees
 like a regular random forest model. QRF uses a weighted sum of all the label
-value to determine the CDF estimates.
+values to determine the CDF estimates.
 
 However because QRF requires access to the complete dataset and needs to maintain
 a mapping from each instance to its label value, it can cannot be used in an online
@@ -95,7 +97,7 @@ setting where instances arrive in sequence, and memory is bounded.
 
 Our algorithm adapts ICP to the online setting by using online tree learners
 to always maintain an up-to-date model, and uses a bounded FIFO queue of instances
-as it's calibration set to keep the memory requirements of the algorithm bounded. We make use of
+as its calibration set to keep the memory requirements of the algorithm bounded. We make use of
 out-of-bag examples from the bagging process in order to remove the need
 for a separate calibration set, as done in \cite{rf-cp-oob}. We make use of
 the online bagging algorithm by \citet{Oza2001online} and the online
@@ -129,10 +131,10 @@ the latest version of the predictors. That is, whenever an online learner
 is modified, we need to update all its predictions in the calibration set.
 In the worst case it is possible that we will need to make $|\calSet| \cdot |L|$
 predictions for a single incoming instance, where $L$ is the set of learners.
-For a calibration set with 1,000 instances and 100 trees this can quickly
+For a calibration set with thousands of instances and hundreds of trees in the ensemble, this can quickly
 become computationally intractable. For this purpose we propose an approximate
 version of the algorithm that only updates the predictions of the new
-data points that have enter the calibration set since the last prediction.
+data points that have entered the calibration set since the last prediction.
 This allows for significant computation savings, while still providing
 an up to date representation of the data points' non-conformity, by constantly
 adding new instances to the set and removing older ones. We call this
@@ -149,10 +151,11 @@ making it possible to estimate the quantiles from them.
 To that end we use the state-of-the-art KLL quantile sketch \cite{karnin2016kll},
 that gives a memory and computation-efficient way to approximate the CDF from
 a stream of data. An important characteristic of the KLL sketch is that it is
-\emph{mergeable}, that is we can apply the sketch to different partitions of
+\emph{mergeable}, that is, we can apply the sketch to different partitions of
 a stream, and subsequently merge them, and the result should be the same
 as if we had applied the sketch to the complete stream. We use this property
-to make the predictions in our ensemble.
+to make the predictions in our ensemble which are trained with samples of the
+data.
 
 We maintain  one of these sketches at every leaf in the trees of the ensemble.
 For every incoming instance that gets filtered to a leaf, we update its sketch
@@ -178,7 +181,8 @@ that is below the significance level set by the user. However, this can be
 easily achieved by producing very wide intervals that are however uninformative.
 For this reason we also need to take into account the width of  the intervals when
 evaluating the algorithms. We measure the actual error rate using Mean Error Rate (MER)
-which is the mean of the 0-1 loss of the algorithm, Relative Interval Size that
+which is the mean of the 0-1 loss of the algorithm, and for interval size we compute
+the Relative Interval Size (RIS) that
 is the normalized mean size of the intervals produced.
 
 To ease presentation we use two different metrics that
@@ -227,8 +231,8 @@ than Mondrian Forest.
 \end{figure}
 
 We also provide an evaluation for different significance levels.
-Depending on the cost of a mistake we might require different levels of confidence
-in our predictions. Thereby it's important to measure the performance of the 
+Depending on the cost of making a mistake, we might require different levels of confidence
+in our predictions. Thereby it's important to measure the performance of the
 algorithms over a range of different significance levels. The results are listed
 in Table \ref{tab:uncertain-significance} where we can see that Mondrian Forests cannot maintain the
 error guarantees above 80\% confidence, and that OnlineQRF provides the best
@@ -262,8 +266,9 @@ keeping the produced intervals informative.
 \end{table}
 
 \section{Discussion}
+\label{sec:uncertain-trees-discussion}
 
-In this Chapter we have presented our work on uncertainty estimation for
+In this chapter we have presented our work on uncertainty estimation for
 online decision trees. We developed two algorithms for this purpose,
 and demonstrated their accuracy and efficiency compared to a state
 of the art algorithm.
