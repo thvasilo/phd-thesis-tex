@@ -286,8 +286,7 @@ most real-world problems are highly non-linear.
 
 Finally, as we mentioned previously, our evaluation is experimental
 and focuses on empirical results drawn from quantitative and qualitative
-experiments. Therefore, the methods we propose lack rigorous theoretical consistency guarantees,
-however, their time and space costs have been derived where possible.
+experiments. Therefore, the methods we propose lack rigorous theoretical consistency guarantees.
 
 \subsection*{Methodological Challenges}
 
@@ -437,6 +436,33 @@ are listed below:
 	across both, and by taking advantage of the structure of sparse datasets,
 	enable faster and more cost-efficient training.
 \end{itemize}
+
+An illustration of how each of the papers listed above covers the
+objectives listed in Section \ref{sec:intro-question-objectives} is given
+in Table \ref{tab:papers-objectives}. We note that \sessionlength is an exploratory study that acts as motivation to our follow-up work.
+
+\begin{table}
+	\centering
+	\begin{tabular}{l c c c}
+		\toprule
+		Publication & O1 (Computation) & O2 (Communication) & O3 (Memory) \\
+		\midrule
+		\conceptsicdm & \checkmark  & \checkmark  & - \\
+
+		\conceptskais &  \checkmark  & \checkmark  & - \\
+
+		\sessionlength & - & - & - \\
+
+		\boostvht & - & \checkmark & \checkmark \\
+
+		\uncertaintrees & \checkmark & - & \checkmark \\
+
+		\blockgbt & - & \checkmark & \checkmark \\
+		\bottomrule
+	\end{tabular}
+	\caption{Contributions by publication.}
+	\label{tab:papers-objectives}
+\end{table}
 
 \subsection{Software Contributions}
 
