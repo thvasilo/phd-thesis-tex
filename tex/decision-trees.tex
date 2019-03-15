@@ -199,6 +199,27 @@ in the following section.
 
 \subsubsection*{Training}
 
+\begin{table}
+	\centering
+	\begin{tabular}{cccc|c}
+		\toprule
+		Index & Feature 1 & Feature 2 & Feature 3 & Gradient \\
+		\midrule
+		\rowcolor{CBOne}
+		1 & 13 & 0 & 488 & 1.5 \\
+		\rowcolor{CBTwo}
+		2 & 7 & 1 & 667 & 2.5 \\
+		\rowcolor{CBThree}
+		3 & 3.5 & 0 & 122 & 2 \\
+		\rowcolor{CBFour}
+		4 & 1.6 & 2 & 366 & 2.5 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Example dataset.}
+	\label{tab:example-data}
+\end{table}
+
+
 The training process for a single gradient boosted tree can be roughly divided into three stages:
 First, we use the existing ensemble to make predictions for every data point in the training
 set. Second, we use the approximated objective function to determine the first and second order
@@ -209,6 +230,9 @@ respectively.
 
 We will focus on the third part of the training stage in our description, as that entails the most
 computationally intensive part of GBT learning, the construction of the \emph{gradient histograms.}
+Throughout our examples we'll be using the dataset from Table \ref{tab:example-data},
+which we color-code by instance to correspond to the figures used later on.
+
 As a tree grows, we partition the complete training set into smaller parts, with each data
 point ending up in one leaf as we drop it down the tree.
 In order to determine the best split for every leaf, we need to iterate through the data
@@ -221,14 +245,11 @@ indicator over the unique values of the feature $f$. In other words, it gives us
 sum of the gradients of all data points in the leaf for a specific value of a given
 feature $f$.
 
-Enumerating every gradient-feature value combination, requires that we calculate
+Enumerating every gradient-feature value combination requires that we calculate
 a gradient sum for each unique value
 of a feature. This can quickly become computationally impractical for real-valued features.
 Systems like XGBoost and LightGBM instead use \emph{quantized histograms},
-where we accumulate gradients in histogram buckets for every feature. For example
-we would sum the gradients of all data points whose $f_1$ value is $[0, 5)$, for all
-data points whose $f_1$ value is $(5, 10]$ etc. until we have iterated over
-the entire partition for a leaf.
+where we accumulate gradients for ranges of values in histogram buckets for every feature.
 
 To determine the bucket ranges we
 can use \emph{quantile sketches} \cite{greenwald2016quantiles} that approximate
@@ -242,9 +263,18 @@ The number of buckets to use is a
 parameter of the quantile sketch algorithm and depends on the type of sketch.
 There exist sketches where we select the number of buckets that
 will be used to represent the CDF, like the ones proposed by \citet{BenHaim2010parallel}
-or it is derived from the approximation error we choose for the sketches, for example
+or the number of buckets is derived from the approximation error we choose for the sketches, for example
 for the sketches used by XGBoost or by the state-of-the-art KLL sketch \cite{karnin2016kll}
 used by DimBoost \cite{dimboost} and in our own work in Papers \uncertaintreesNum and \blockgbtNum.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\columnwidth]{feature-one-grad}
+	\caption{Gradient histogram for Feature 1 of the Table \ref{tab:example-data} data.
+	The first bucket is the sum of the data points with index 3 and 4, since both their Feature 1
+	values fall in the $[0, 5]$ bucket.}
+	\label{fig:gradient-feature-one}
+\end{figure}
 
 
 The selection of bucket ranges can be done either at the beginning of training, taking the
@@ -252,29 +282,66 @@ overall feature CDF, or at every leaf taking the CDF of each feature using only 
 partition for that leaf. \citet{xgboost} show that by selecting the buckets for every
 leaf separately, we can achieve the same level of accuracy, while using histograms with a higher approximation error, and hence reducing the memory footprint of the algorithm.
 
+
 Once the bucket ranges have been determined for each feature, we use them to create
-the empty gradient histograms. At this point we have a gradient value for each data point, so
+the gradient histograms. At this point we have a gradient value for each data point, so
 we go through each feature and add the data point's gradient value to the gradient
 histogram bucket
 that corresponds to the feature value.
-For example, for a data point $x_i$ with a feature value $f_1 : 0.5$, we would add its
+In our example data in Table \ref{tab:example-data}, for Feature 1 we use the
+buckets $[0, 5), (5, 12], (12, 20)$.
+Then, for the data point $x_1$ with a feature value $f_1 : 13$, we would add its
 gradient value to the
-the bucket $[0, 5)$ of the gradient histogram for $f_1$.
+the bucket $(12, 20]$ of the gradient histogram for $f_1$, and do this for
+every data point, adding the point's gradient to the corresponding bucket given
+the feature value. The gradient histogram for Feature 1 is shown in Figure \ref{fig:gradient-feature-one}. In the Figure we use color to identify the
+contribution of each data point to each bucket.
 When we are done iterating, each feature will have a corresponding gradient histogram,
 whose sum is equal to the sum of gradients for the leaf.
+For the data of Table \ref{tab:example-data}, the complete gradient histograms
+are shown in Figure \ref{fig:gradient-all-features}.
 
-We can then use these gradient histograms to determine the optimal split point for the
-leaf, by calculating the updated loss for each split:
+\begin{figure}
+	\centering
+	\includegraphics[width=\columnwidth]{all-features-grad-custom}
+	\caption{Gradient histograms for all features of the Table \ref{tab:example-data} data.
+		}
+	\label{fig:gradient-all-features}
+\end{figure}
+
+Once we have all the gradient histograms, we can use them to determine the optimal split point for the
+leaf, by calculating the potential gain of each feature and split point combination using the following equation~\cite{xgboost}:
 
 \begin{equation}
-	\mathcal{L}_{\text{split}} = \frac{1}{2} \left[\frac{\left(\sum_{i \in I_{L}} g_{i} \right)^{2}} {\sum_{i \in I_{L}} h_{i}+ \lambda} + \frac{\left(\sum_{i \in I_{R}} g_{i} \right)^{2}}{\sum_{i \in I_{R}} h_{i} + \lambda} - \frac{\left(\sum_{i \in I}g_{i}\right)^{2}}{\sum_{i \in I}h_{i}+\lambda}\right]-\gamma
+	\mathcal{G}_{\text{split}} = \frac{1}{2} \left[\frac{\left(\sum_{i \in I_{L}} g_{i} \right)^{2}} {\sum_{i \in I_{L}} h_{i}+ \lambda} + \frac{\left(\sum_{i \in I_{R}} g_{i} \right)^{2}}{\sum_{i \in I_{R}} h_{i} + \lambda} - \frac{\left(\sum_{i \in I}g_{i}\right)^{2}}{\sum_{i \in I}h_{i}+\lambda}\right]-\gamma
 \end{equation}
 
+\noindent
 where $I_L, I_R$ determine the data points that end up to the left and right side of the split
-respectively, and $I$ is the complete set of data for the leaf partition. At this point, to determine
-the best split we need to simply iterate through all the feature-split-point combinations
+respectively, $I$ is the complete set of data for the leaf partition, and $\gamma$ a
+regularization parameter. At this point, to determine
+the best split we need to simply iterate through all the feature-splitpoint combinations
 and rank every candidate according to their loss reduction (or \textit{gain}) and select the
-best one.
+best one. In our example we have three buckets, and hence two possible split points for each feature. The result for our example data is shown in Table \ref{tab:gains}, where
+we have simplified the problem to only include the first order gradients. From that example
+we can see that the best feature-split combination would be choosing the first split
+point for the first feature (i.e. Feature 1 $< 5$) as the split condition.
+
+\begin{table}
+	\centering
+	\begin{tabular}{ccc}
+		\toprule
+		& Splitpoint 1 & Splitpoint 2 \\
+		\midrule
+		Feature 1 & \textbf{36} & 21 \\
+		Feature 2 & 35 & 30 \\
+		Feature 3 & 26 & 30 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Potential gains for each possible split point, given
+	the gradient histograms of Figure \ref{fig:gradient-all-features}.}
+	\label{tab:gains}
+\end{table}
 
 In the case of millions of features and a large bucket count this can also be
 computationally heavy operation, as we need to evaluate $|F| \times B$ split candidates.
