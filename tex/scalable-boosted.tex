@@ -138,6 +138,56 @@ bit-string \bitstring.
 \citet{quickscorer}
 prove that the left-most bit set to one in \bitstring will indicate the exit node for the example.
 
+We provide an illustrative example, re-using the data from Section \ref{sec:bg-dt-gbts},
+which we reproduce in Table \ref{tab:example-data-reprod}. An example decision tree
+is given in Figure \ref{fig:quickscorer-example}, along with the corresponding
+bit-strings. Each bit in the bit-string
+corresponds to one of the leafs of the tree, with the left-most bit corresponding
+to the left-most leaf. For example, the bit-string for the root is $0011$, because
+if the root evaluate to false, the two left-most leaves become inaccessible 
+(remember we move right when a node evaluates to false), but either of the
+two right-most leaves could still be reached.
+
+Let's take data point 2, which has the values $f1: 7, f2:1 , f3: 667$.
+Using our oracle we can tell that the nodes that evaluate to false are the root, as $7 > 5$,
+and its right child, as $667 > 500$. Their bit-strings are $0011$ and $1101$ respectively. To determine
+the exit node we simply need to perform an \texttt{AND} operation between these two and an all-ones
+bit-string: $1111 \land 0011 \land 1101 = 0001$. The left-most bit set to one
+is bit 4 (or 3 if we are using 0-indexing), hence the exit node corresponds
+to the fourth leaf from the left. We can verify that is true by following the tree
+conditions.
+
+\begin{table}
+	\centering
+	\begin{tabular}{cccc|c}
+		\toprule
+		Index & Feature 1 & Feature 2 & Feature 3 & Gradient \\
+		\midrule
+		\rowcolor{CBOne}
+		1 & 13 & 0 & 488 & 1.5 \\
+		\rowcolor{CBTwo}
+		2 & 7 & 1 & 667 & 2.5 \\
+		\rowcolor{CBThree}
+		3 & 3.5 & 0 & 122 & 2 \\
+		\rowcolor{CBFour}
+		4 & 1.6 & 2 & 366 & 2.5 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Example dataset.}
+	\label{tab:example-data-reprod}
+\end{table}
+
+\begin{figure*}
+	\centering
+	\includegraphics[width=0.8\textwidth]{decision_tree}
+	\caption{Example decision tree, and the end positions of the data points in Table
+	\ref{tab:example-data-reprod}. When a node condition evaluate to false, we move to
+	the right child of the node.
+	The bitstring  zeros indicate the leafs that become unreachable when a node a evaluates to false.}
+	\label{fig:quickscorer-example}
+\end{figure*}
+
+
 We adapt the above algorithm to work in the block-distributed setting. Each worker
 now only has access to particular range of features for a subset of the data points.
 So it can only evaluate the conditions of the tree that correspond to its slice
@@ -153,11 +203,18 @@ a horizontal slice, all send their bit-strings to the same server.
 The server then aggregates the partial bit-strings using a simple bit-wise \AND to determine the exit
 node for each data point.
 
+In our example, say data point 2 was split between two workers, Worker 1 and Worker 2,
+with Worker 1 responsible for Features 1 \& 2, and Worker 2 responsible for Feature 3.
+Then Worker 1 would be able to only evaluate the condition of the root as false and produce
+the local bistring $0011$ and Worker 2 would evaluate the condition involving Feature 3, producing
+the local bistring $1101$. Each worker sends their local bit-strings to the same server,
+where they are aggregated to produce the final bit-string $0001$.
+
 Because the \AND operator is both commutative and associative, the order in which
 these aggregations happen does not affect the result, and the overall aggregation
 will be equal to the aggregation of the partial aggregations. This ensures that
 our predictions will be correct. By using this method we can determine the exit
-nodes for each data point, and from that the corresponding gradients that we need
+nodes for each data point, and from that, the corresponding gradients that we need
 for the next step of histogram aggregation. By only communicating bit-strings
 and performing bitwise operations that are hardware optimized we ensure that
 the communication and computation cost of this step remains low.
@@ -168,33 +225,51 @@ the communication and computation cost of this step remains low.
 
 With centralized data the histogram aggregation step requires no communication,
 and can be performed by running a simple local aggregation.
-For example, assume that for a specific leaf we have two data points, $\{x_1, x_2\}$,
-and our dataset has two features $\{f_1, f_2\}$ each so that $x_1: \{0.1, 7\}$ and $x_2: \{1.5, 8\}$.
-Say the gradient values of the data points are $\{x_1: 3.5, x_2: 0.5\}$.
-The gradient histograms' buckets are determined by the empirical distribution of each
-feature across the complete dataset. These are computed using a \emph{quantile sketch}
-of the Cumulative Distribution Function for each feature. These are the same kind of sketches
-as used in Chapter \ref{ch:uncertain-trees} for OnlineQRF. We choose a the number of split-points
-$B$ we want to examine for each feature, and create equi-weight buckets for each feature
-by iterating through the complet dataset. These calculated independently at each worker
-and are then aggregated across the cluster to get the combined CDF for each feature.
-In this example say we have two buckets for each feature:
-$f_1: \{[0.0, 1.0), [1.0, 5.0)\}$ and $f_2:\{ [0.0, 5.0), [5.0, 10.0)\}$.
-Then, for this leaf, the gradient histogram for $f_1$ would be $\{3.5, 0.5\}$ and for $f_2$
-it would be $\{0.0, 3.5 + 0.5\}$, since both data points have values for $f_2$ that fall
-in the second bucket, $[5.0, 10.0)$, of the gradient histogram.
+In the example given in Section \ref{sec:bg-dt-gbts}, we determined the full
+gradient histograms for all features and data points by aggregating the
+gradient values for each feature range bucket.
+In that example we had three buckets per feature, determined by the empirical
+CDF of each feature, which we populated by iterating through each feature
+value in the current leaf partition. The resulting full histogram was
+shown in Figure \ref{fig:gradient-all-features}. We  again use the
+data from Table \ref{tab:example-data-reprod}.
 
-Now assume that we have a distributed dataset, and that $x_1$ resided on worker $w_1$ and $x_2$ resided on worker $w_2$. This is
-an example of the row-distributed pattern that all current distributed algorithms assume.
-In this case we need to create at each worker local histograms, which
-in this case would be $f_1: \{3.5, 0.0\}$ and $f_2: \{0.0, 3.5\}$ for $w_1$, and $f_1: \{0.0, 0.5\}$ and $f_2: \{0.0, 0.5\}$ for $w_2$. To get a complete picture of the gradient histograms
-we need to aggregate them between the workers, so the algorithm involves one communication
-step. One drawback of all current row-distributed methods is that they use dense communication
-for the aggregation we just described. For the example given above, dense communication
+
+Now assume that we have a row-distributed dataset, where we assign data points 1 and 2 to Worker 1, and data points 3 and 4 to
+Worker 2.
+To get a complete picture of the gradient histograms as shown in Figure \ref{fig:gradient-all-features}, we need to first create local histograms at each worker, and
+then aggregate them between the workers, meaning that the the algorithm involves one communication
+step.
+
+\begin{figure}
+	\centering
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{all-features-grad-rowdist-w1}
+		\caption{Local gradient histogram for Worker 1.}
+		\label{fig:grad-row-dist-w1}
+	\end{subfigure}
+	\\
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{all-features-grad-rowdist-w2}
+		\caption{Local gradient histogram for Worker 2.}
+		\label{fig:grad-row-dist-w2}
+	\end{subfigure}
+	\caption{Local gradient histograms for row-distributed data. Note the existence of multiple
+	zero values that would nonetheless need to be communicated using a dense communication pattern like
+	allreduce.}
+	\label{fig:grad-row-dist}
+\end{figure}
+
+
+One drawback of all current row-distributed methods is that they use dense communication
+for the aggregation we just described~\cite{xgboost, lightgbm, catboost, dimboost}. Dense communication
 requires us to communicate $|F| \cdot B$ values for each worker, where $F$ the set of features,
 and $B$ the number of histogram buckets. However,
-many of the histogram values can be zero, as was the case for four out of the eight possible
-values in the example. This problem is exacerbated when we are dealing with sparse
+many of the histogram values can be zero as can be seen in Figure \ref{label}, where we show
+the local gradient histograms for each worker. This results in redundant communication when
+a dense communication pattern is used. This problem is exacerbated when we are dealing with sparse
 datasets with millions of features.
 
 Block-distribution introduces another level of complexity into this operation, as

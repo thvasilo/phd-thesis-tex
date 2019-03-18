@@ -154,6 +154,17 @@ of the algorithm. For algorithms where the computational load cannot be easily d
 workers, for example the existence of high-frequency words in LDA\cite{lightLDA}, allreduce can result
 in imbalances between the workers, leading to increased runtime\cite{straggler-ml, stale-sync-ps}.
 
+Another important drawback of allreduce is that its implementations (like MPI) make use of dense communication. That is, it is currently
+not possible to utilize the sparsity of data when communicating, because the implementations
+require that the maximum byte size of the object to be known in advance, which is
+typically \texttt{number of elements $\times$ size of single element}. For sparse
+data where the number of non-zero values can be very small, this can lead to orders
+of magnitude higher communication cost. We demonstrate this issue in the context
+of distributed Gradient Boosted Tree learning and provide
+a solution in \blockgbt. We note that there exist multiple research
+efforts to make sparse allreduce possible \cite{sparse-comms-ml, sparse-allreduce, sparse-mpi}
+but none that can be considered ready for production.
+
 
 The MapReduce programming paradigm \cite{mapreduce} offered some more flexibility in terms of the
 programming model, in which the base primitives are a map operation that is applied
