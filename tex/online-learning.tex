@@ -4,7 +4,7 @@
 In this chapter we will provide an introduction to online learning, which is the learning
 setting for Papers \boostvhtNum and \uncertaintreesNum. We start by providing an brief
 overview of the kinds of models available in Section \ref{sec:bg-ol-models}
-and identify issues and solutions for evaluation in Section \ref{sec:bg-ol-evaluation}.
+and identify issues and solutions for the evaluation of online models in Section \ref{sec:bg-ol-evaluation}.
 Since our work focuses on ensemble methods we present some popular online ensemble algorithms in Section
 \ref{sec:bg-ol-ensembles} and finish the chapter with a look at the available
 open-source software for online learning in Section \ref{sec:bg-ol-software}.
@@ -13,7 +13,7 @@ open-source software for online learning in Section \ref{sec:bg-ol-software}.
 \label{sec:bg-ol-models}
 
 As with batch learning, there exists of variety of models in the online
-learning domain. Commonly these are models that were first developed
+learning domain. Commonly, these are models that were first developed
 for the batch setting and subsequently adapted to online learning.
 In this section we focus on supervised learning methods for
 classification and regression, and explore different
@@ -31,26 +31,28 @@ for in-depth looks at the topic.
 \subsection*{Instance Based Learning}
 One of the simplest and most intuitive methods in machine learning
 is Instance Based Learning (IBL), which usually takes the form of
-a nearest neighbor model. IBL exemplifies many characteristics
+a nearest neighbor model.
+In Instance Based Learning, we make predictions based on the instances themselves, unlike
+model-based approaches that try to extract a model (function) from the
+data. IBL exemplifies many characteristics
 that make it a good candidate for online learning, and the
 IBLStreams work of \citet{ibl-streams} demonstrates how these
 can put to use to create an efficient online learning model.
-In Instance Based Learning, we make predictions based on the instances themselves, unlike
-model-based approaches that try to extract a model (function) from the
-data. IBL algorithms are inherently incremental, and can be faster to
+IBL algorithms are inherently incremental, and can be faster to
 update compared to a model-based approach, however suffer from two
 distinct disadvantages: First, we need to store the data points themselves, which in a
 massive streaming data scenario can be infeasible. To deal with this
 issue IBLStreams will evict the oldest examples once an upper limit on
-the number of data points stored is hit. Second, inference can be much slower as it requires
+the number of data points stored is reached. Second, inference can be much slower as it requires
 finding the k nearest neighbors to the incoming dataset, which even when
 using efficient indexing structures (like Locality Sensitive Hashing\cite{lsh-indyk, lsh-gionis}) can be very costly
 compared to a model-based prediction, e.g. from a linear model. The
 authors suggest that IBL makes more sense in scenarios where updates are
-often but queries infrequent. In terms of drift adaptation, IBLs can have
+often but queries infrequent.
+
+In terms of drift adaptation, IBLs can have
 the advantage that removing the effect of older data points is easy
 compared to say an ANN model, but it is still highly model-dependent.
-
 The authors suggest different ways to deal with
 concept drift in IBLStreams. They mention the limitations of a non-adaptive, window-based
 approach and suggest that IBL methods are good candidates for learning in
@@ -62,7 +64,7 @@ to determine when to discard examples. One could use the temporal and/or spatial
 relevance, or consistency of the examples to the current concept.
 In IBLStreams, the contents and size of the ``case base'',
 i.e. the examples that form the nearest neighbor representation, is
-updated automatically. IBLSTreams tries to maintain a balance between
+updated automatically. IBLStreams tries to maintain a balance between
 maintaining few examples in the case base in order to be able to deal
 easier with concept drift, while keeping the set large enough so that
 predictions under a single concept are accurate. To that end, they
@@ -80,7 +82,7 @@ For regression these models have the general form~\cite{esl}:
 \end{equation}
 
 \noindent
-where $p$ the number of features in the dat, assuming a linear relationship between the dependent and independent predictors.
+where $p$ the number of features in the dataset, where we assume a linear relationship between the dependent and independent predictors.
 
 One of the earliest examples of an online linear classification model is the seminal
 Perceptron algorithm \cite{perceptron} that tries to find a separating hyperplane
@@ -110,11 +112,11 @@ on Support Vector Machines (SVM) by \citet{svm-book}, which we
 focus on in the sequel.
 
 \subsection*{Support Vector Machines}
-Support Vector Machines, like the Perceptron, are algorithms for determining
+Support Vector Machines, similar to the Perceptron, are algorithms for determining
 optimal separating hyperplanes, but unlike the Perceptron, they can deal with
 cases where the data are not linearly separable. They achieve that by using the
-kernel trick to transform the data and determining a linear boundary in
-the transformed space\cite{esl}.
+``kernel trick'' to transform the data and determining a linear boundary in
+the transformed space~\cite{esl}.
 SVMs have also
 been extended to work in the online domain \cite{online-kernels}
 where the main challenge is the need to maintain a set of support vectors
@@ -274,7 +276,7 @@ compared to using sliding windows.
 One common issue in classification, in the batch as well as the online setting, is class
 imbalance.
 For example, on a dataset where 90\% of the instances belong to a single
-class, simple majority classifier will achieve 90\% accuracy, although no
+class, a simple majority classifier will achieve 90\% accuracy, although no
 real learning is taking place.
 To deal with this problem in the online setting, \citet{kappa-statistic}
 proposed the Kappa statistic, and its extension $\kappa_m$ \cite{kappa-m},which is a robust estimator that takes into consideration
@@ -335,7 +337,7 @@ The online bagging model proposed by \citet{Oza2001online} and further explored 
 
 The main insight of the algorithm, commonly referred to as \emph{OzaBag}, is that we can approximate the binomial distribution
 used to determine whether a sample will be included the bootstrap
-sample using a Poisson distribution. The distribution of bagging sample sizes, $K$, tends
+sample using a Poisson distribution\todo{Verify this claim, is it in the orig. paper?}. The distribution of bagging sample sizes, $K$, tends
 to a Poisson($\lambda = 1$) as the number of samples $N \rightarrow \infty$. To use bagging online then,
 for each incoming example and
 for each member of the ensemble \ensemble, we draw a sample from a Poisson($\lambda = 1$). We use to the drawn scalar $k$ to modify the weight of the incoming instance, and train the algorithm using the updated weight. \citet{Oza2001online} prove that as the number of samples N grows
@@ -363,8 +365,7 @@ of weights.
 Online boosting has found more widespread use compared to online bagging ensembles,
 as it's been used successfully in many computer vision applications, with a focus on
 object tracking \cite{online-boost-cv4, online-boost-cv, online-boost-cv3, online-boost-cv2, online-boost-cv5, online-boost-cv-6}.
-As a result many different boosting algorithms have been proposed, some, as the ones
-mentioned in tracking, aimed at a specific application, and others that are more general.
+As a result many different boosting algorithms have been proposed, some aimed at a specific application like object tracking, and others that are general learning algorithms.
 
 We will focus on the original algorithm proposed by \citeauthor{Oza2001online},
 which we also make use of in \boostvht,
@@ -462,9 +463,9 @@ parallel online boosting, while maintaining their guarantees.
 Compared to the multitude of options available for batch learning, the availability
 of open-source software for online learning is relatively limited. In this section we
 mention the most popular libraries for online learning, and point out the ones we have have used
-and extended during this thesis.
+and extended as part of this dissertation.
 
-Perhaps the first online learning library released is the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the Very Fast Decision Tree (VFDT) algorithm (which we describe in Chapter \ref{sec:bg-dt-online-trees}).
+Perhaps the first online learning library released was the Very Fast Machine Learning (VFML) framework which was developed by \citet{vfdt} as part of their work on the Very Fast Decision Tree (VFDT) algorithm (which we describe in Chapter \ref{sec:bg-dt-online-trees}).
 It includes the VFDT and its variations, as well as data pre-processing tools.
 
 One of the most established open-source frameworks for online learning is MOA, which stands
@@ -487,7 +488,7 @@ design that allows it to run on top of many distributed stream processing engine
 Apache Flink \cite{flink}, Apache Storm~\cite{storm} and Apache Samza~\cite{samza}.
 Similarly to MOA, it provides learning algorithms and evaluation methods, and its
 design makes it easy to extend with new algorithms.
-We have used SAMOA as the distributed engine for \boostvht.
+We have used SAMOA as the development framework for \boostvht.
 
 Another library aimed at distributed stream learning is StreamDM \cite{streamdm}.
 StreamDM also inherits some of the design aspects of MOA, providing similar interfaces

@@ -33,7 +33,7 @@ of data, known as \emph{data-parallel} learning, or over different parts of
 our model, known as \emph{model-parallel} learning. Certain kinds of models
 may be more amenable to data or model parallelism. For example, training
 linear models using stochastic gradient descent lends itself well to
-data-parallel approaches \cite{dekel-optimal-distributed} while random
+data-parallel approaches~\cite{dekel-optimal-distributed}, while random
 forest (RF) models allow for easy model-parallel learning,
 since every tree in an RF can be grown independently.
 
@@ -85,7 +85,7 @@ that cannot fit into the memory of one machine or GPU.
 
 The main challenge becomes
 that, unlike i.i.d. data, the parameters of most models are dependent on each
-other often through an explicit structure like a neural network or Bayesian network, or a
+other, often through an explicit structure like a neural network or Bayesian network, or a
 sequential dependence, for example in additive models like gradient boosting \cite{esl}.
 Care needs to be taken therefore to ensure that models are kept consistent and do not
 diverge due to the limited view of the model each worker possesses.
@@ -125,8 +125,9 @@ algorithm, however as \citet{dekel-optimal-distributed} show, this comes
 at a cost of the optimality of the solution. \citet{dekel-optimal-distributed}
 instead suggest a method that communicates the gradients for each batch and uses
 their average, leading to an asymptotically optimal algorithm for smooth
-convex loss functions. What this example demonstrates is the need for communication
-in ML models. In this section we will examine some of the approaches for distributed
+convex loss functions. What this example demonstrates is the need for synchronization
+in ML models, which in a distributed setting means communicating model updates
+over the network. In this section we will examine some of the approaches for distributed
 communication that have been employed in machine learning.
 
 Efficient distributed communication has been a focus in the HPC and distributed systems
@@ -145,14 +146,14 @@ level, an allreduce operation on a vector of objects will apply an aggregation
 function on the copy of the vector on each worker in a cluster and communicate
 the results between workers, such that at the end of the operation all workers end up with the same,
 aggregated, copy of the vector. Allreduce is a high level operation and as a result there have been
-many different implementations suggested, like the traditional
+many different implementations proposed, like the traditional
 binary tree reduction algorithm, ring reduce, and butterfly reduce~\cite{allreduce}.
 One of the main advantages of the allreduce operation is that it offers developers a simple ``interface'', as the developers only need to provide an aggregation function,
 and all workers share the same role.
 This simplifies the programming burden significantly, however limits the expressivity
 of the algorithm. For algorithms where the computational load cannot be easily divided between
-workers, for example the existence of high-frequency words in LDA\cite{lightLDA}, allreduce can result
-in imbalances between the workers, leading to increased runtime\cite{straggler-ml, stale-sync-ps}.
+workers, for example the existence of high-frequency words in LDA~\cite{lightLDA}, allreduce can result
+in imbalances between the workers, leading to increased runtime~\cite{straggler-ml, stale-sync-ps}.
 
 Another important drawback of allreduce is that its implementations (like MPI) make use of dense communication. That is, it is currently
 not possible to utilize the sparsity of data when communicating, because the implementations
@@ -174,10 +175,10 @@ to have more flexible communication, however the aggregation pattern is still ri
 The use of disk-based aggregations for MapReduce are not a good fit for the iterative
 nature of most ML algorithms and often leads to increased runtime~\cite{slow-learners-fast}.
 In-memory data processing systems based on MapReduce-like computation, like Apache Spark \cite{spark}
-suffer from similar issues, although systems like Flink have proposed native iterations
-is such a system~\cite{flink-iterations}.
+suffer from similar issues, although systems like Apache Flink have proposed native iterations
+in a distributed stream processing system~\cite{flink-iterations}.
 
-A more flexible paradigm is the Parameter Server~\cite{muPS} (PS). In the PS programming
+A more flexible paradigm is the Parameter Server~\cite{muPS, ps-osdi} (PS). In the PS programming
 paradigm, machines assume the role of \emph{workers} or \emph{servers}. Workers are
 responsible for the computation of parameter changes, for example by iterating through
 their local partition of the the data to collect gradient updates. Servers are responsible
@@ -189,14 +190,13 @@ These push and pull operations take as input a \emph{key} that transparently det
 the server that is responsible for that set of parameters, thereby allowing
 one-to-one communication between servers and workers. We note that worker to
 worker communication is not allowed in this paradigm however.
-
 By allowing the parameters themselves to be
 distributed over a cluster of computers, PS allows for intuitive implementation of
 model-parallel and block-parallel solutions as exemplified in \cite{muPS, lightLDA}.
-The Parameter Server also makes it easier to relax the strict synchronization
-barriers that allreduce approaches have, for example by allowing different workers
-to work on different iterations of problem, with a bound on the discrepancy between
-the fastest and slowest worker that still allows for provable convergence~\cite{stale-sync-ps}.
+%The Parameter Server also makes it easier to relax the strict synchronization
+%barriers that allreduce approaches have, for example by allowing different workers
+%to work on different iterations of problem, with a bound on the discrepancy between
+%the fastest and slowest worker that still allows for provable convergence~\cite{stale-sync-ps}.
 
 The flexibility of the PS comes at cost of more complex programming on the developer
 side, compared to an allreduce operation, as the developer needs to provide the

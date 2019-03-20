@@ -40,7 +40,7 @@ than the state of the art \cite{mondrian-forests-original}, while being an order
 In this section we provide an overview of the methods developed for this work.
 We provide a brief description of the batch algorithms that we base our algorithms
 on, and proceed to explain how we make use of approximations to transfer them to
-the online domain. We deal with the regression task, and our task is to develop algorithms
+the online domain. We deal with the regression, and our task is to develop algorithms
 that exhibit what is called \emph{conservative validity} in conformal prediction literature. This refers
 to algorithms that produce predictive intervals such that the probability of the true value not
 being part of the interval is \emph{less than or equal to} $\alpha$, which is referred
@@ -70,7 +70,8 @@ and determine the intervals.
 
 However, ICP is an offline method designed for the batch setting and assumes that the complete
 dataset is available at training time, in addition to requiring a external
-validation set to use as the calibration set.
+validation set to use as the calibration set. As such it cannot be applied to
+the online domain.
 
 
 \subsection{Quantile Regression Forests}
@@ -119,7 +120,7 @@ At prediction time, we use these non-conformity scores to produce the
 intervals: After a regular ensemble prediction is made for the incoming
 instance, we determine the interval boundaries by moving through the
 sorted list of non-conformity scores, and pick the value
-$\phi = \calSet[\floor*{(1 - \significance) \cdot c}$ to be half the
+$\phi = \calSet[\floor*{(1 - \significance) \cdot |\calSet|}$ to be half the
 length of the interval, where $\calSet$ the sorted set of non-conformity scores
 and \significance the requested significance level.
 We call this meta-algorithm CPExact.
@@ -129,7 +130,7 @@ We call this meta-algorithm CPExact.
 The map of predictors to out-of-bag predictions needs to be up-to-date with
 the latest version of the predictors. That is, whenever an online learner
 is modified, we need to update all its predictions in the calibration set.
-In the worst case it is possible that we will need to make $|\calSet| \cdot |L|$
+In the worst case, it is possible that we will need to make $|\calSet| \cdot |L|$
 predictions for a single incoming instance, where $L$ is the set of learners.
 For a calibration set with thousands of instances and hundreds of trees in the ensemble, this can quickly
 become computationally intractable. For this purpose we propose an approximate
@@ -178,9 +179,9 @@ to ensure fair comparison with MF.
 Evaluating interval prediction algorithms entails two aspects: The error rate
 and the width of the intervals. The algorithms should maintain an error rate
 that is below the significance level set by the user. However, this can be
-easily achieved by producing very wide intervals that are however uninformative.
+easily achieved by producing very wide intervals that are uninformative.
 For this reason we also need to take into account the width of  the intervals when
-evaluating the algorithms. We measure the actual error rate using Mean Error Rate (MER)
+evaluating the quality of the predictions. We measure the actual error rate using Mean Error Rate (MER)
 which is the mean of the 0-1 loss of the algorithm, and for interval size we compute
 the Relative Interval Size (RIS) that
 is the normalized mean size of the intervals produced.
@@ -193,8 +194,9 @@ the requested error rate, and as such is a better fit for our task.
 
 We can see the results in terms of Utility for the small-scale data in Figure \ref{fig:utility-small-mid}
 and for the large-scale drifting datasets in Figure \ref{fig:utility-concept-drift}.
-We can see that our methods are able to outperform the Mondrian Forest baseline,
-while being computationally more efficient. The runtimes for each
+We can see that our methods are able to outperform the Mondrian Forest baseline
+in terms of Utility,
+while at the same time being computationally more efficient. The runtimes for each
 category of dataset are listed in Table \ref{tab:uncertain-runtimes}, where we
 can see that our algorithms are up to an order magnitude faster
 than Mondrian Forest.
@@ -278,10 +280,10 @@ we have dramatically reduced the computation necessary for online conformal
 prediction by maintaining up-to-date online models. For both OnlineCP and
 OnlineQRF we have bounded the memory use of the algorithms by using approximate
 and bounded data structures, that are able to provide the estimates we need
-at a fraction of the memory cost.
+at a fraction of the memory cost, compared to exact data structures.
 The approximations made however create a tradeoff,
 as we can no longer guarantee the consistency and validity of the algorithms.
-As the trees in a random forest are trained independently there is no
+In terms of communication cost, as the trees in a random forest are trained independently there is no
 need to communicate model updates when running the algorithms in parallel.
 However, for OnlineQRF in a distributed setting we would need to merge the histograms of each tree to provide
 a quantile prediction. Through our use of the near-optimal KLL sketch we ensure

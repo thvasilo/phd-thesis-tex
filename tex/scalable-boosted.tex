@@ -15,7 +15,7 @@ of boosting, either through parallelizing the base algorithm, or by developing
 algorithms that can perform boosting online.
 
 % Previous approaches and why they don't work
-However, when it comes to high dimensional data current approaches fall short
+However, when it comes to high dimensional data, current approaches fall short
 in terms of scalability.
 In the online domain, due to the sequential nature of online boosting algorithms,
 current online methods do not make use of parallelism for training~\cite{online-gradient-boosting, Oza2001online, online-boosting-theoretical}.
@@ -35,7 +35,7 @@ online boosting algorithms. To achieve that, we use a sequential ensemble of mod
 on different parts of a single data point in a distributed environment.
 In the batch domain we enable scalability across \emph{both} the data point and
 feature dimensions by developing a block-distributed gradient boosted tree algorithm.
-We provide algorithms that make block-distributed training feasible and communication-efficient.
+We show how to make block-distributed training feasible and communication-efficient.
 
 \section{Online and Distributed Boosted Trees}
 \label{sec:boostvht-method}
@@ -54,11 +54,11 @@ leaf the instance ends up in. This separation of duties allows for the scalable 
 VHT: the algorithm uses two components, one called the \emph{model aggregator}
 that is responsible for sorting instances to leafs and maintaining the model, and
 one called the \emph{local statistics}, which are potentially many workers responsible
-for maintain the statistics for the leaves of the tree.
+for maintaining the statistics for the leaves of the tree.
 The model aggregator is responsible for breaking up each instance into its constituent
 features, and sending them, along with the label, to the local statistics workers.
 The model aggregator will periodically query the local statistics to check if we have
-collected enough information to split the leaf with high confidence, as done in the
+collected enough information to split each leaf with high confidence, as done in the
 original VFDT.
 
 \subsection*{Optimizations}
@@ -99,8 +99,9 @@ trees~\cite{hundreds-classifiers}.
 In \blockgbt we extend distributed gradient boosted trees, by parallelizing their
 training across both the data point and feature dimensions, making use of block-distribution.
 Here we provide a summary of each part of the training algorithm that we had to
-adapt to the block-distributed setting.
-The training process of GBTs can roughly be divided into three stages: First comes
+adapt to the block-distributed setting. W provided an explanation of the training
+process for GBTs in Section \ref{sec:bg-dt-gbts}, and we briefly re-iterate here:
+The training process can be roughly divided into three stages: First comes
 the prediction part, in which we use the existing ensemble to make a prediction
 for each point in the dataset. We use these predictions to get the gradient
 value for each data point. Second comes the gradient histogram creation.
@@ -141,18 +142,18 @@ prove that the left-most bit set to one in \bitstring will indicate the exit nod
 We provide an illustrative example, re-using the data from Section \ref{sec:bg-dt-gbts},
 which we reproduce in Table \ref{tab:example-data-reprod}. An example decision tree
 is given in Figure \ref{fig:quickscorer-example}, along with the corresponding
-bit-strings. Each bit in the bit-string
+bit-strings for each internal node. Each bit in the bit-string
 corresponds to one of the leafs of the tree, with the left-most bit corresponding
 to the left-most leaf. For example, the bit-string for the root is $0011$, because
-if the root evaluate to false, the two left-most leaves become inaccessible 
-(remember we move right when a node evaluates to false), but either of the
+if the root evaluate to false, the two left-most leaves become inaccessible
+(we move right when a node evaluates to false), but either of the
 two right-most leaves could still be reached.
 
-Let's take data point 2, which has the values $f1: 7, f2:1 , f3: 667$.
+Let's take data point 2, which has the feature values $f1: 7, f2:1 , f3: 667$.
 Using our oracle we can tell that the nodes that evaluate to false are the root, as $7 > 5$,
 and its right child, as $667 > 500$. Their bit-strings are $0011$ and $1101$ respectively. To determine
-the exit node we simply need to perform an \texttt{AND} operation between these two and an all-ones
-bit-string: $1111 \land 0011 \land 1101 = 0001$. The left-most bit set to one
+the exit node we simply need to perform an \texttt{AND} operation between these two
+bit-strings: $0011 \land 1101 = 0001$. The left-most bit set to one
 is bit 4 (or 3 if we are using 0-indexing), hence the exit node corresponds
 to the fourth leaf from the left. We can verify that is true by following the tree
 conditions.
@@ -181,31 +182,32 @@ conditions.
 	\centering
 	\includegraphics[width=0.8\textwidth]{decision_tree}
 	\caption{Example decision tree, and the end positions of the data points in Table
-	\ref{tab:example-data-reprod}. When a node condition evaluate to false, we move to
+	\ref{tab:example-data-reprod}. When a node condition evaluates to false, we move to
 	the right child of the node.
-	The bitstring  zeros indicate the leafs that become unreachable when a node a evaluates to false.}
+	The bitstring  zeros indicate the leafs that become unreachable when a node evaluates to false.}
 	\label{fig:quickscorer-example}
 \end{figure*}
 
 
 We adapt the above algorithm to work in the block-distributed setting. Each worker
 now only has access to particular range of features for a subset of the data points.
-So it can only evaluate the conditions of the tree that correspond to its slice
+So each worker can only evaluate the conditions of the tree that correspond to its slice
 of the features. We create local bit-strings at each worker, one for each example.
 These bit-strings have the same properties as in the original Quikscorer algorithm,
 however can only eliminate leafs that are children of internal nodes that correspond
 to the features available at that worker. To fully determine the output for each
 data point, the workers that hold data for the same horizontal slice will need
-to aggregate their bit strings for each data point. We do this by utilizing the
+to aggregate their bit-strings for each data point. We do this by utilizing the
 parameter server \cite{muPS} architecture: Each server is responsible for a
 one horizontal slice of the data. The workers that hold the different parts of
-a horizontal slice, all send their bit-strings to the same server.
+a horizontal slice, all send their local bit-strings to the same server, for each example in
+their data block.
 The server then aggregates the partial bit-strings using a simple bit-wise \AND to determine the exit
 node for each data point.
 
 In our example, say data point 2 was split between two workers, Worker 1 and Worker 2,
 with Worker 1 responsible for Features 1 \& 2, and Worker 2 responsible for Feature 3.
-Then Worker 1 would be able to only evaluate the condition of the root as false and produce
+Worker 1 would be able to only evaluate the condition of the root as false and produce
 the local bistring $0011$ and Worker 2 would evaluate the condition involving Feature 3, producing
 the local bistring $1101$. Each worker sends their local bit-strings to the same server,
 where they are aggregated to produce the final bit-string $0001$.
@@ -267,7 +269,7 @@ One drawback of all current row-distributed methods is that they use dense commu
 for the aggregation we just described~\cite{xgboost, lightgbm, catboost, dimboost}. Dense communication
 requires us to communicate $|F| \cdot B$ values for each worker, where $F$ the set of features,
 and $B$ the number of histogram buckets. However,
-many of the histogram values can be zero as can be seen in Figure \ref{label}, where we show
+many of the histogram values can be zero as can be seen in Figure \ref{grad-row-dist}, where we show
 the local gradient histograms for each worker. This results in redundant communication when
 a dense communication pattern is used. This problem is exacerbated when we are dealing with sparse
 datasets with millions of features.
@@ -277,9 +279,10 @@ in that case, no worker has a complete view of any data point. Each worker gets 
 that is, a horizontal \emph{and} vertical slice of the data. If we think of the complete
 gradient histograms as a tensor of dimensions $|L| \times |F| \times B$, each worker
 will populate a part of this tensor, across the $L$ (leafs) and $B$ (buckets) dimensions, but limited to a specific
-subset of $F$ (features). In \blockgbt, we use a sparse representation of this tensor at each worker, which allows
+subset of $F$ (features). In \blockgbt, we use a sparse representation of this tensor at each worker
+which we then send to the servers, which allows
 us to eliminate the extraneous communication described above. Our experiments show
-that for sparse datasets this brings down the communication cost by multiple orders
+that for sparse datasets this brings the communication cost down by multiple orders
 of magnitude.
 
 Once each worker iterates
@@ -313,9 +316,9 @@ levels of dimensionality for the text-generator data. We can see
 that as we increase the number of features and make the problem more
 difficult, the accuracy of the VHT algorithm deteriorates, while
 BoostVHT is consistently accurate, and is practically equivalent to the single-threaded
-boosting algorithm. At the same time the concurrent and parallel design of the algorithm
-provides us with a speedup of \textbf{45$\times$} on average, compared to the single-threaded
-implementation of MOA (Shown in Table 2 of the paper).
+boosting algorithm. At the same time, the concurrent and parallel design of the algorithm
+provides us with a speedup of \textbf{$\times$45} on average, compared to the single-threaded
+implementation of MOA (shown in Table 2 of \boostvht).
 
 \begin{figure*}
 	\centering
@@ -329,7 +332,7 @@ Finally we examine the scalability of the algorithm in terms of strong and weak 
 Ideal strong scaling provides \emph{linear speed-up}: Doubling the amount of resources
 while keeping the problem size constant should halve the execution time.
 Ideal weak scaling should have \emph{linear scale-out}: doubling both the problem size
-and resources at the same time should affect the training time significantly.
+and resources at the same time should not affect the training time significantly.
 We illustrate the scaling characteristics of the algorithm in Figures
 \ref{fig:weak-scaling} and \ref{fig:strong-scaling} for weak and strong
 scaling respectively. As we can see in the figures, the algorithm scales
@@ -366,8 +369,9 @@ near-linear speed-up for our strong scaling experiments.
 \subsubsection*{Block-distributed Gradient Boosted Trees}
 \label{sec:block-gbt-results}
 
-To determine the performance gains and limitations of block-distributed approach and
-the sparse communication we employ over the dense row-distributed approach, we use 4 datasets with different sparsity levels. First
+To determine the performance gains and limitations of our block-distributed approach and
+the sparse communication we employ, over the dense row-distributed approach,
+we use 4 datasets with different sparsity levels. First
 we have two highly sparse datasets, URL and avazu with roughly 3,2 million and
 1 million features respectively. Second, we use the RCV1 dataset with approximately
 47 thousand features and the dense Bosch dataset with 968 features.
@@ -381,10 +385,11 @@ and our sparse block-distributed histograms. We also evaluate the end-to-end run
 of the histogram aggregation step, divided into communication and computation stages,
 to measure the real-world runtime. This step is the most computationally intensive
 part of GBT learning \cite{comm-efficient-gbt} and in our experiments constitutes
-at least 90\% of the total runtime.
+at least 90\% of the total runtime of the training.
 
 In Figure \ref{fig:block-gbt-hist-size} we can see the benefits of sparse communication:
-For the highly sparse URL and avazu datasets the reduction in communication is five and three orders of magnitude respectively. The sparse histograms however introduce additional computational
+For the highly sparse URL and avazu datasets the reduction in communication is five and
+three orders of magnitude respectively. The sparse histograms however introduce additional computational
 cost: unlike dense data structures that are contiguous in memory, sparse structures use
 indirect addressing which makes building and accessing these histograms cache-unfriendly.
 This, in combination with the overhead introduced by the use of the parameter server,
@@ -411,13 +416,14 @@ the dense data, where computation time dominates, as shown in Figure \ref{fig:bl
 \end{figure}
 
 
-Finally we demonstrate the communication savings possible in terms of the feature sketches. As we mentioned in Section \ref{sec:bg-dt-gbts}, in order to determine the possible
+Finally we demonstrate the communication savings possible in terms of the feature sketches.
+As we mentioned in Section \ref{sec:bg-dt-gbts}, in order to determine the possible
 split points for each feature, we need to have an estimate of the CDF for each feature. These
 can be calculated once at the beginning of learning, or once per leaf, to get a more accurate representation
 of the CDF in every leaf. \citet{xgboost} show that generating per-leaf (local) split points leads to the same overall
 accuracy as using the overall sketches (global) while using much less accurate sketches, thereby creating potential communication savings:
 A quantile sketch's size is determined by the level of error in the approximation we can
-accept \cite{karnin2016kll}.
+accept~\cite{karnin2016kll}.
 
 However, when using dense communication we need to know the size
 of the sketch being communicated in advance. In a probabilistic sketch, this is only possible

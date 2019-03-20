@@ -31,24 +31,25 @@ which demonstrated the unique characteristics of music streaming listeners, and 
 an appropriate predictive model. This work acts as a motivation for our follow-up work
 on decision tree learning.
 
-For our first contribution to decision tree learning, we develop an algorithm
+For our first contributions to decision tree learning,
+we presented two algorithms to extract uncertainty estimates
+for the predictions of ensembles of online regression trees.
+We use approximate data structures and online learners to
+adapt two batch algorithms to the online domain, bounding
+their computational and memory use and making it possible
+to train the algorithms on unbounded streaming data. We demonstrate the
+favorable performance of the algorithm against the state of
+the art in terms of accuracy, and an order of magnitude improvement
+in the runtime.
+
+Our next contribution again deals with online decision tree learning, where we develop an algorithm
 to learn boosted online decision trees in parallel, achieving significant
 learning speedups while maintaining the correctness guarantees of the
-underlying online boosting algorithms. Our approach scale almost linearly,
+underlying online boosting algorithms. Our approach scales almost linearly,
 for both weak and strong scalability and we clearly demonstrate the gains
 in terms of accuracy over single trees and speed compared to single-threaded
 approaches.
 
-Our next contribution again deals with online decision tree learning,
-and we presented two algorithms to extract uncertainty estimates
-for the predictions of ensemble of online regression trees.
-We use approximate data structures and online learners to
-adapt two batch algorithms to the online domain, bounding
-their computational and memory use and making it possible
-to train the algorithm on unbounded data. We demonstrate the
-favorable performance of the algorithm against the state of
-the art in terms of accuracy, and an order of magnitude improvement
-in the runtime.
 
 Finally we presented a new algorithm for distributed gradient boosted tree
 learning that enables a new dimension of scalability, allowing for scale-out
@@ -107,7 +108,7 @@ deal with concept drift at the meta-algorithm level would also be welcome, inste
 of relying on the underlying weak learner to provide this capability.
 
 For our work parallel boosted online trees, one weakness are datasets with
-a small amount of features, which limits the potential speedup of the
+a small number of features, which limits the potential speedup of the
 algorithm.
 An interesting direction to explore is to
 create efficient data-parallel and block-parallel algorithms that might sacrifice

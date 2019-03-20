@@ -5,7 +5,7 @@ The problem of computing the similarity between nodes in a graph has been
 well-studied under the context of link prediction~\cite{link-prediction-survey},
 anomaly detection~\cite{graphsim-anomaly},
 recommendation~\cite{graphsim-recommendation}, and information retrieval
-~\cite{graphsim-retrieval} among others. Therefore a
+~\cite{graphsim-retrieval}. Therefore a
 number of algorithms have been proposed to tackle the issue.
 In this chapter we provide an introduction to the problem and
 highlight some of the established approaches as well as recent
@@ -13,6 +13,11 @@ research focused on scalability. We divide the approaches into local
 and global based on their ability to determine the similarity of nodes
 based on local information or by looking into the entire graph, as done in
 ~\cite{link-prediction-survey}.
+In this chapter we focus on
+measures that use the structure of the graph to determine the similarity,
+however for specific applications there exist similarity measures
+based on content or curated databases such as utilizing the graph
+structure of the Wordnet databaset \cite{wordnet-similarity, wordnet-relatedness, wordsim}.
 
 As the problem is closely related to link prediction, we point the interested reader to
 the survey by \citet{link-prediction-survey} or the more
@@ -21,14 +26,9 @@ that include vertex similarity algorithms.
 
 \subsection*{Preliminaries}
 
-In this chapter we focus on
-measures that use the graph structure to determine the similarity,
-however for specific applications there exist similarity measures
-based on content or curated databases such as utilizing the graph
-structure of the Wordnet databaset \cite{wordnet-similarity, wordnet-relatedness, wordsim}.
 
 We denote the graph $G(V, E)$ where $V$ is the set of vertices and $E$ the set
-of edges. When discussing computational cost, we denote the average degree of a graph as $d$.
+of edges. When discussing computational cost, we denote the average degree of the graph as $d$.
 To ease notation we assume undirected graphs, however most of the methods
 mentioned here can apply to directed graphs as well.
 For a node $v \in V$, $N(v)$ denotes the set of nodes in $v's$ \emph{neighborhood},
@@ -42,7 +42,7 @@ Local similarity measures generally determine the similarity between
 nodes by examining structural properties between nodes that
 are 2 hops apart in the graph. While this limits their ability to model long-range
 similarities, they have been shown to have accurate results, and are computationally
-efficient~\cite{link-prediction-survey}.
+efficient~\cite{link-prediction-survey}. In the sequel we present some of the most popular local similarity measures.
 
 
 \emph{Common Neighbors.} This method makes the assumption that nodes that
@@ -116,7 +116,7 @@ to be similar if they are related to similar objects. It is defined
 in a recursive manner as:
 
 \begin{equation}
-	S_{SR}(u, v)= C \cdot \frac{\sum_{y \in N(u)} \sum_{y^{\prime} \in N(v)} S_{SR}(y, y^{\prime})}{d{x} \cdot d_{y}}
+	S_{SR}(u, v)= C \cdot \frac{\sum_{y \in N(u)} \sum_{y^{\prime} \in N(v)} S_{SR}(y, y^{\prime})}{d_{x} \cdot d_{y}}
 \end{equation}
 
 \noindent
@@ -133,7 +133,7 @@ and has the same drawbacks.
 the average number of steps required to reach node $v$ from node $u$. The assumption
 this method makes is that two nodes are more similar if they have a smaller average
 commute distance, and is defined in terms of elements $l$ of the pseudoinverse of the
-graph Laplacian, $L$ as defined in \cite{link-prediction-survey}.
+graph Laplacian, $L$ as defined in \cite{link-prediction-survey}\todo{Define Laplacian?}.
 
 \begin{equation}
 	S_{ACT}(u, v)=\frac{1}{l_{u, u}^{+}+l_{v, v}^{+}-2 l_{uv}^{+}}

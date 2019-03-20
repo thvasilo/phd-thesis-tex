@@ -38,7 +38,7 @@ users typically consume multiple items in one session and have different behavio
 depending on the type of session as we show in our results (Section \ref{sec:session-length-main-findings}).
 
 In our paper we provide an analysis the session length distribution using
-tools from survival analysis and use build a predictive model using gradient boosted trees with specialized
+tools from survival analysis and build a predictive model using gradient boosted trees with specialized
 loss functions to place the probability mass correctly in the presence of a
 skewed dependent distribution.
 
@@ -63,7 +63,7 @@ f(t) = \frac{k}{\lambda}\left( \frac{t}{\lambda}\right)^{k-1}e^{-(t/\lambda)^k},
 
 
 \noindent
-that provides two parameters: the shape $k$ and the scale $\lambda$. The shape $k$ determines
+and provides two parameters: the shape $k$ and the scale $\lambda$. The shape $k$ determines
 the evolution of the failure rate over time, while the scale, $\lambda$, determines the spread
 of the distribution. The effect of $k$ is best shown through an illustration of the hazard rate
 for the Weibull function, that gives us the failure rate for an item that has survived until time
@@ -77,9 +77,9 @@ $t$, shown in Figure \ref{fig:weibull-failure-rate}.
 \end{figure}
 
 The failure rate increases with time for $k > 1.0$, which is called the ``positive-aging''
-effect, and decreases with time for $k < 1.0$ an effect called ``negative-aging''. Positive aging
+effect, and decreases with time for $k < 1.0$, an effect called ``negative-aging''. Positive aging
 is what we commonly associate with web sessions and is indeed observed in 98.5\% of post-click
-behavior\cite{weibull-web-browsing}: as time goes on users become more likely to quit the session
+behavior~\cite{weibull-web-browsing}: as time goes on users become more likely to quit the session
 at any point. On the other hand, negative aging means that sessions become less likely to end
 as time goes on. This behavior is also described as ``infant mortality'' where defective units
 may fail early on, but as time goes on they become less likely to fail.
@@ -88,7 +88,7 @@ exponential distribution.
 
 \subsection{Prediction}
 
-On the prediction side, in order to tackle the issue of the long-tail distribution
+For prediction, in order to tackle the issue of the long-tail distribution
 of the sessions and to extract as much power as possible from the predictive features,
 we choose the gradient boosted tree (GBT) algorithm. GBTs allow us to customize the
 loss function to better fit the long-tail distribution of the dependent, and are flexible
@@ -104,7 +104,7 @@ the duration of the last session.
 Our dependent is non-negative and long-tail distributed. One common solution in
 these cases is to log-transform the dependent and then fit using a squared
 loss, but we often want to use a loss function that is better suited to the
-objective. To that end we try fitting the GBT both on the log-transformed data with
+task. To that end we try fitting the GBT both on the log-transformed data with
 a mean squared error objective, as well as fitting on a log-likelihood
 objective of a Gamma function with a log link function, which can explicitly
 model non-negative data with a positive skew. We also test two versions
@@ -218,8 +218,8 @@ we can optimize recommendations and ad scheduling for a long running session.
 While there exist methods that are able to provide uncertainty estimates
 from decision trees for static datasets, no methods exist for online decision trees.
 \uncertaintrees
-fills this gap in research that provides online decision trees models
-with the ability to provide uncertainty estimates.
+fills this gap in research and provides online decision trees models
+with the ability to produce uncertainty estimates.
 
 Finally, during this study we were able to get first hand experience with
 the accuracy, flexibility and scalability that boosted decision trees

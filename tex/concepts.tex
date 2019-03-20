@@ -1,7 +1,7 @@
 In this chapter we provide a summary of our work on scalable graph similarity calculation
 and concept discovery.
 We describe the problem and some related work in Section \ref{sec:concepts-background}
-and describe our approach in Section \ref{sec:concepts-method}. We present our
+and present our approach in Section \ref{sec:concepts-method}. We give our
 findings in Section \ref{sec:concepts-main-findings} where we also present an experiment that was not part of our original work, that
 bridges deep learning with out work to extract visual concepts from images.
 We close the chapter with a discussion relating this work to our overall
@@ -12,19 +12,19 @@ research question in Section \ref{sec:concepts-discussion}
 \label{sec:concepts-background}
 
 This work tackles the general problem of determining the similarity between \emph{objects}
-in a data set, which can take many forms: cosine similarity between
-items embedded in a low-dimensional representation \cite{word2vec}, metric learning~\cite{metric-learning-survey}, or, as done
+in a data set, which can take the forms of cosine similarity between
+items embedded in a low-dimensional representation \cite{word2vec}, or, as done
 in this work, by modeling the problem as graph vertex similarity calculation.
 We use the generic term \emph{object} to emphasize the generality of our
-approach, made possible by modeling the generality of the graph representation. In the paper we present examples from the linguistic,
-music, and molecular biology domains, and here we provide an additional example using
+approach, made possible by the graph representation. In the paper we present examples from the linguistic,
+music, and molecular biology domains, and in this dissertation provide an additional example using
 generated image tags as input, in Section \ref{sec:concepts-openimages}.
 
 In our approach we model the objects as nodes in graph and their interactions as edges,
-initially weighted by a measure of correlation between the objects. In text for example, the
+initially weighted by a simple measure of correlation between the objects. In text for example, the
 nodes would be words and the edges could be weighted by their mutual information \cite{mutual-information-nlp}.
 
-However, the computation of all-to-all similarities in a graph can quickly become
+The computation of all-to-all similarities in a graph can quickly become
 intractable for large graphs. The popular SimRank algorithm developed by
 \citet{simrank} for this purpose,
 has a cubic time complexity with respect to the number of nodes in the graph.
@@ -65,16 +65,15 @@ while maintaining a controllable and small approximation error.
 
 The second approximation has to do with the locality of the computation. Instead of trying
 to solve the computationally intractable all-to-all similarity problem, we instead only look at
-nodes that are one hop apart, keeping the computation local and dramatically limiting the number of
-cost per node in the graph.
+nodes that are one hop apart, keeping the computation local and dramatically computation cost per node in the graph.
 This approximation is what makes the distributed implementation of the algorithm efficient.
 In order to compute, for each pair of nodes in a neighborhood, their common sets of correlated nodes,
 we need only examine the common sets of incoming edges per node. By distributing our graph
 using the id of the incoming nodes as a key we can perform this computation using a
 self-join operation, which involves no communication of data in the cluster. As a result
-we are able to scale the computation to massive datasets, as we demonstrate with our use of the
-Google Books n-gram dataset, which corresponds to approximate 4\% of all the books ever
-printed \cite{ngrams} (24.5 billion rows).
+we are able to scale the computation to massive datasets, as we demonstrate by training on the
+Google Books n-gram dataset, which corresponds to approximately 4\% of all the books ever
+printed \cite{ngrams} (24.5 billion rows), in a few minutes.
 
 Once we have built the similarity graph, we can go one step further in order to extract
 groups of inter-similar objects that we call \emph{concepts}. These correspond to groups
@@ -131,7 +130,7 @@ artist concepts which correspond to music genres can be seen in Figure
 	\label{fig:concepts-artists}
 \end{figure}
 
-\subsection{Visual concepts through the combination of Deep Learning and graphs}
+\subsection{Uncovering Visual Concepts}
 
 \label{sec:concepts-openimages}
 
@@ -232,14 +231,14 @@ our approach that by design does not calculate similarities for words that are u
 as using the graph structure is one of the main ways we can make the computation
 scale. For that reason we use the word pairs that appear both in the evaluation
 dataset \textit{and} exist in our similarity graph. We use the Google n-grams
-data with a corpus of 361 billion tokes, which in under 10 minutes produces
+data with a corpus of 361 billion tokens, which in under 10 minutes produces
 a similarity graph that contains 60\% of the word pairs present in WS-353.
 
 The produced similarities have a Spearman rank correlation of 0.76, which
 is exactly what the inter-annotator agreement is for this dataset.
 Finally we compare the WS-353 and our produced similarities with the
 cosine similarities of the GloVe~\cite{glove} embedding vectors,
-which was at the time of publication the state of the art embedding
+which was at the time of publication the state of the art language embedding
 method. We train our method on a smaller corpus and smaller window than
 the GloVe vectors, but are still able to generate similarities comparable
 to GloVe (0.71 Spearman rank correlation).
