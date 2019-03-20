@@ -108,7 +108,7 @@ we aim to tackle in this dissertation:
 	such as word2vec~\cite{word2vec} for text do not provide a principled way to uncover
 	concepts, relyling on parametric clustering methods like k-means clustering to group related
 	concepts. The similarity calculation for such embedding methods will involve the
-	calculation of a dot product for all-to-all pairs, making the process 
+	calculation of a dot product for all-to-all pairs, making the process
 	computationally intractable.
 
 	\item \emph{Uncertainty estimation for online tree models}. As ML models are being
@@ -210,17 +210,16 @@ computing capabilities and allow for scale-out with the problem size.
 The overall research question that summarizes the objectives of this dissertation is the following:
 
 \begin{displayquote}
-	\emph{How can we use approximations and modern hardware to make otherwise computationally
-		intractable approaches scale?}
+	\emph{How can we use approximations and parallelism to develop scalable learning algorithms?}
 \end{displayquote}
 
 \noindent
 Based on this research question, we develop our methods utilizing approximate computation and efficient parallel implementations. Our thesis statement is therefore the following:
 
 \begin{displayquote}
-	\emph{Approximations allow us to make otherwise computationally intractable approaches scalable.
+	\emph{Approximations allow us to make otherwise computationally costly approaches scalable.
 	By carefully designing our trade-offs, we can extract useful results using a fraction
-	of the resources exact approaches require. These approximations combined with utilizing modern hardware lead to efficient, scalable solutions.}
+	of the resources exact approaches require. These approximations combined with utilizing parallel and distributed computation lead to efficient, scalable solutions.}
 \end{displayquote}
 
 \section{Methodology}
@@ -349,10 +348,12 @@ The main contributions of this dissertation, along with the papers they appear i
 are listed below:
 
 \begin{itemize}
-	\item \textbf{\conceptsicdm}: Knowing an object by the company it keeps: A domain-agnostic scheme
-	for similarity discovery~\cite{concepts-icdm}. \\
-	\textbf{\conceptskais}: Domain-Agnostic Discovery of Similarities and Concepts at Scale
-	~\cite{concepts-kais}.
+	\item \textbf{\conceptsicdm}: \emph{Knowing an object by the company it keeps: A domain-agnostic scheme for similarity discovery.}
+	Olof G\"{o}rnerup, Daniel Gillblad, and Theodore Vasiloudis. 2015.
+	\emph{Proceedings of the 2015 IEEE International Conference on Data Mining (ICDM '15)}, pages 121-130, 2015. \\
+	\textbf{\conceptskais}: \emph{Domain-Agnostic Discovery of Similarities and Concepts at Scale.}
+	Olof G\"{o}rnerup, Daniel Gillblad, and Theodore Vasiloudis. In \emph{Knowledge and
+	Information Systems 51(2)}, pages 531--560, 2017.
 
 	In these works we we deal with the following research questions:\\
 	\emph{How to create a scalable way to calculate the similarity between nodes
@@ -370,7 +371,10 @@ are listed below:
 	expensive operation being a \emph{self-join} operation that has linear speed-up and
 	constant scale-up, with limited communication.
 
-	\item \textbf{\sessionlength}: Predicting Session Length in Media Streaming~\cite{session-length}.
+	\item \textbf{\sessionlength}:
+	\emph{Predicting session length in media streaming.} Theodore Vasiloudis, Hossein Vahabi, Ross Kravitz, and Valery Rashkov. In \emph{Proceedings of the 40th
+	International ACM SIGIR Conference on Research and Development in Information
+	Retrieval (SIGIR '17)}, pages 977--980, 2017.
 
 	In this work we deal with the following research questions:\\
 	\emph{What are the characteristics of session length distributions in media streaming?\\
@@ -392,7 +396,7 @@ are listed below:
 	trees, topics we subsequently worked on in Papers \boostvhtNum, \uncertaintreesNum,
 	and \blockgbtNum respectively.
 
-	\item \textbf{\boostvht}: BoostVHT: Boosting Distributed Streaming Decision Trees~\cite{boost-vht}.
+	\item \textbf{\boostvht}: \emph{BoostVHT: Boosting Distributed Streaming Decision Trees.} Theodore Vasiloudis, Foteini Beligianni, and Gianmarco De Francisci Morales. 2017.  In \emph{Proceedings of the 2017 ACM on Conference on Information and Knowledge Management (CIKM '17)}, pages 899--908, 2017.
 
 	In this work we deal with the following research question:
 	\emph{How can we make use of modern hardware to parallelize and distribute
@@ -411,7 +415,7 @@ are listed below:
 	across the features while keeping the algorithm sequential, thereby maintaining the guarantees of online boosting
 	algorithms while at the same time providing significant speedups.
 
-	\item \textbf{\uncertaintrees}: Quantifying Uncertainty in Online Regression Forests~\cite{uncertain-trees}.
+	\item \textbf{\uncertaintrees}: \emph{Quantifying Uncertainty in Online Regression Forests}. Theodore Vasiloudis, Gianmarco De Francisci Morales, and Henrik Bostr\"{o}m. \emph{Under Review}.
 
 	In this work we deal with the following research question:
 	\emph{How can we estimate the uncertainty in the predictions of online tree
@@ -428,7 +432,7 @@ are listed below:
 	domain through approximate computation.
 
 
-	\item \textbf{\blockgbt}: Block-distributed Gradient Boosted Trees~\cite{block-gbt}.
+	\item \textbf{\blockgbt}: \emph{Block-distributed Gradient Boosted Trees}. Theodore Vasiloudis, Hyunsu Cho, and Henrik Bostr\"{o}m. \emph{Under Review}.
 
 
 	In this work we deal with the following research questions:
