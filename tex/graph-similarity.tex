@@ -138,3 +138,62 @@ graph Laplacian, $L$ as defined in \cite{link-prediction-survey}\todo{Define Lap
 \begin{equation}
 	S_{ACT}(u, v)=\frac{1}{l_{u, u}^{+}+l_{v, v}^{+}-2 l_{uv}^{+}}
 \end{equation}
+
+
+\section{Applications}
+
+As a general graph problem the applications of node similarity are as varied
+as the problems that we can model using a graph representation. In this
+section we will provide a few example application that exemplify the importance
+of the problem.
+
+One of the areas where node similarity has been most successful is link
+prediction. In the link prediction task, we try to predict missing
+edges in a graph, which might represent real connections that are encoded
+in the graph, or connections which are yet to happen in the real world.
+In the taxonomy of link prediction methods proposed by
+\citet{link-prediction-survey-2017}, node similarity is one of the
+four major categories of algorithms, alon with probabilistic and
+statistical methods, algorithmic methods and pre-processing methods.
+The usual way that node similarity methods are used for link prediction
+is that node pairs are ranked by the similarity score given by the
+algorithm and the top-ranked pairs of nodes that are currently not connected
+in the graph are considered the most likely to form a connection.
+In the paper describing the Resource Allocation measure, \citet{resource-allocation-sim}
+example consider the probability of a true missing link
+being given a higher score than a randomly chosen missing link
+to evaluate the accuracy of their method.
+
+
+Node similarity has also been explored in the context of recommendation.
+The Average Commute Distance~\cite{average-commute-distance} metric mentioned above, uses the distance
+required by a random walker to move between two nodes as an indication
+of the similarity between nodes. The authors make us of this score
+to provide recommendations, either using a direct approach, where
+the similarity between users and items is calculated on the same
+graph, or indirectly, by first measuring the similarity between
+users in a graph, and then determining the preference of said
+user for an item given the preferences of their top-k neighbbors
+for that particular item.
+\citet{trust-similarity} use vertex similarity to recommend trustworthy
+nodes to a query node that belongs in the same trust network.
+The similarity is calculated this time between
+nodes in two graphs, the structure graph and the trust network,
+using again structural information between the graphs.
+
+Vertex similarity methods have also been used in natural
+language processing, to determine the similarity between
+words and documents. \citet{semantic-similarity} make use
+of a diffusion process on a lexicon graph where nodes
+are terms in the text and edges represent co-occurrence.
+This allows them to discover semantic relationships between
+nodes that are not directly connected in the graph, but
+can however be semantically related. \citet{semantic-sim-random-walk}
+on the other hand calculate similarities using random walks between words
+in the Wordnet~\cite{wordnet} graph to estimate their semantic
+similarity. A similar approach is taken in \cite{wordnet-graph-sim},
+where the authors use the distance between the common ancestors
+of words in WordNet. More recently, \citet{word-sim-concepts} uses
+a combination of the WordNet graph, embedding methods like GloVe~\cite{glove}
+and a concept dictionary to determine the semantic similarity between
+words.
