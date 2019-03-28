@@ -394,14 +394,33 @@ are listed below:
 	We demonstrate the differences in the way that sessions develop and end
 	between users, and illustrate the importance of selecting an appropriate
 	objective function for a non-negative, power-law distributed dependent value.
-	This work act as a use-case for our follow up work, as it motivates the use of online learning,
-	uncertainty estimation, and large-scale distributed learning with gradient boosted
-	trees, topics we subsequently worked on in Papers \boostvhtNum, \uncertaintreesNum,
+	This work act as a use-case for our follow up work, as it motivates the use of
+	uncertainty estimation, online learning, and large-scale distributed learning with gradient boosted
+	trees, topics we subsequently worked on in Papers \uncertaintreesNum, \boostvhtNum,
 	and \blockgbtNum respectively.
 
 	\textbf{Contribution:} The author of this dissertation designed and implemented the work
 	presented the paper, performed all the experiments, and contributed most of the
 	text.
+
+	\item \textbf{\uncertaintrees}: \emph{Quantifying Uncertainty in Online Regression Forests}. Theodore Vasiloudis, Gianmarco De Francisci Morales, and Henrik Bostr\"{o}m. \emph{Under Review}.
+
+	In this work we deal with the following research question:
+	\emph{How can we estimate the uncertainty in the predictions of online tree
+	ensemble methods?}
+
+	Uncertainty estimation is of paramount importance when applying learning methods
+	to domains where mistakes can be costly, like finance and autonomous vehicles.
+	In addition, in these domains we have a constantly changing environment,
+	and learning algorithms need to be able to constantly adapt. While ensembles
+	of decision trees have been shown to be accurate estimators~\cite{hundreds-classifiers}, their online
+	counterparts lack any way to estimate the uncertainty in their predictions.
+	In this paper we develop two general algorithms for uncertainty estimation
+	from online random forest ensembles, adapting batch methods to the online
+	domain through approximate computation.
+
+	\textbf{Contribution:} The author of this dissertation designed and implemented the
+	work presented the paper, performed all the experiments, and contributed most of the text and all visualizations.
 
 	\item \textbf{\boostvht}: \emph{BoostVHT: Boosting Distributed Streaming Decision Trees.} Theodore Vasiloudis, Foteini Beligianni, and Gianmarco De Francisci Morales. 2017.  In \emph{Proceedings of the 2017 ACM on Conference on Information and Knowledge Management (CIKM '17)}, pages 899--908, 2017.
 
@@ -424,25 +443,6 @@ are listed below:
 
 	\textbf{Contribution:} The author of this dissertation designed and implemented the
 	work presented the paper, contributed to the experimentation, and contributed most of the text.
-
-	\item \textbf{\uncertaintrees}: \emph{Quantifying Uncertainty in Online Regression Forests}. Theodore Vasiloudis, Gianmarco De Francisci Morales, and Henrik Bostr\"{o}m. \emph{Under Review}.
-
-	In this work we deal with the following research question:
-	\emph{How can we estimate the uncertainty in the predictions of online tree
-	ensemble methods?}
-
-	Uncertainty estimation is of paramount importance when applying learning methods
-	to domains where mistakes can be costly, like finance and autonomous vehicles.
-	In addition, in these domains we have a constantly changing environment,
-	and learning algorithms need to be able to constantly adapt. While ensembles
-	of decision trees have been shown to be accurate estimators~\cite{hundreds-classifiers}, their online
-	counterparts lack any way to estimate the uncertainty in their predictions.
-	In this paper we develop two general algorithms for uncertainty estimation
-	from online random forest ensembles, adapting batch methods to the online
-	domain through approximate computation.
-
-	\textbf{Contribution:} The author of this dissertation designed and implemented the
-	work presented the paper, performed all the experiments, and contributed most of the text and all visualizations.
 
 
 	\item \textbf{\blockgbt}: \emph{Block-distributed Gradient Boosted Trees}. Theodore Vasiloudis, Hyunsu Cho, and Henrik Bostr\"{o}m. \emph{Under Review}.
