@@ -1,6 +1,6 @@
 \chapter{Introduction}
 
-Machine learning is now is being introduced into more and more areas in
+Machine learning is now being introduced into more and more areas in
 our lives. What once was mostly used in the realm of computer science for
 tasks like digit recognition \cite{mnist} is now being used
 in medicine~\cite{health-ml-1, health-ml-2}, energy~\cite{ml-building, ml-energy},
@@ -271,15 +271,12 @@ trees. We find graphs to be powerful data structures that can encode complex
 relationships and are therefore worthy of further study in terms of scalability.
 Decision trees have been shown to perform well for a wide variety of tasks~\cite{hundreds-classifiers}
 and have distinct advantages like interpretability, although that is limited
-for large ensembles, the ability to deal with missing data in a principled
-manner, and a smaller reliance on hyperparameter tuning compared to say
-a method optimized through stochastic gradient descent..
-%Comparing decision trees with deep learning models mentioned before, the space
-%of architecture search in a deep network versus parameters like
-%the minimum splitting weight in a tree is much larger, meaning
-%that designing a neural network for a specific task requires
-%much more domain knowledge and experience than training a
-%decision tree ensemble.
+for large ensembles, andh have the ability to deal with missing data in a principled
+manner, both very important aspects in an industrial setting.
+Comparing decision trees with deep learning models mentioned before, the space
+of architecture search in a deep network is much larger compared to tuning parameters like
+the minimum splitting weight in a tree, making it easier to tune hyperparameters
+for decision trees.
 
 Second, although we develop online learning methods that can deal
 with concept drift, we do not propose any new concept drift adaptation
@@ -295,7 +292,9 @@ most real-world problems are highly non-linear.
 
 Finally, as we mentioned previously, our evaluation is experimental
 and focuses on empirical results drawn from quantitative and qualitative
-experiments. Therefore, the methods we propose lack rigorous theoretical consistency guarantees.
+experiments. For example in Chapter \ref{ch:uncertain-trees} we trade-off
+theoretical consistency guarantees for efficient computation
+and only demonstrate empirically that the algorithms are able to maintain validity.
 
 \subsection*{Methodological Challenges}
 

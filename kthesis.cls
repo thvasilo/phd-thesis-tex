@@ -1,4 +1,4 @@
-% Copyright (c) 2017-2018, Gabriel Hjort Blindell <ghb@kth.se>
+%Information and Communication Technology Copyright (c) 2017-2018, Gabriel Hjort Blindell <ghb@kth.se>
 %
 % This work is licensed under a Creative Commons Attribution-NoDerivatives 4.0
 % International License (see LICENSE file or visit
@@ -284,7 +284,7 @@
     {\Large\scshape\@getFieldLC{author}\par}
     \vfill\vfill\vfill\vfill\vfill\vfill\vfill
     \begin{tabular}{c}
-      \@getFieldCap{degreeThesis} in Information and Communication Technology\\
+      \@getFieldCap{degreeThesis} in Computer Science\\
       School of Electrical Engineering and Computer Science\\
       KTH Royal Institute of Technology\\
       Stockholm, Sweden \@getField{tritaYear}

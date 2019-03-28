@@ -131,6 +131,9 @@ Another approach is taken by the Forgetron \cite{forgetron} which,
 for every mistake made by the algorithm, runs the standard
 Perceptron update, shrinks the support vector coefficients, and removes
 the support vectors with the smallest coefficients.
+The Pegasos algorithm~\cite{pegasos} trains SVM models using Stochastic Gradient Descent,
+employing subgradients to deal with the non-linearity of the hinge
+loss.
 The Passive-Aggressive algorithm has also been modified
 to perform kernel learning on a budget \cite{pa-budget},
 i.e. with a bounded model size, by introducing an additional
