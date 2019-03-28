@@ -58,13 +58,18 @@
 \part{Concluding Remarks}
 \label{part:conclusion}
 \input{./tex/concluding-remarks}
-\newpage
+
+
+\bibliographystyle{kthnat} % this is just an example, other styles can be used as well
+\bibliography{main} % calls the separate document named Doc.bbl
+
+\part{Research Papers}
+\input{papers}
+\afterpage{\null\thispagestyle{empty}}
 
 \backmatter
 \printindex
 %\printreferences
 
-\bibliographystyle{kthnat} % this is just an example, other styles can be used as well
-\bibliography{main} % calls the separate document named Doc.bbl
 
 \end{document}
