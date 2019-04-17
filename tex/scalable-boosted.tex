@@ -260,7 +260,7 @@ step.
 	\end{subfigure}
 	\caption{Local gradient histograms for row-distributed data. Note the existence of multiple
 	zero values that would nonetheless need to be communicated using a dense communication pattern like
-	allreduce.}
+	MPI allreduce.}
 	\label{fig:grad-row-dist}
 \end{figure}
 
@@ -269,7 +269,7 @@ One drawback of all current row-distributed methods is that they use dense commu
 for the aggregation we just described~\cite{xgboost, lightgbm, catboost, dimboost}. Dense communication
 requires us to communicate $|F| \cdot B$ values for each worker, where $F$ the set of features,
 and $B$ the number of histogram buckets. However,
-many of the histogram values can be zero as can be seen in Figure \ref{grad-row-dist}, where we show
+many of the histogram values can be zero as can be seen in Figure \ref{fig:grad-row-dist}, where we show
 the local gradient histograms for each worker. This results in redundant communication when
 a dense communication pattern is used. This problem is exacerbated when we are dealing with sparse
 datasets with millions of features.
