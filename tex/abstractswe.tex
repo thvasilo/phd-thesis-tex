@@ -1,11 +1,19 @@
 %!TEX root = ../main.tex
 
 \begin{sammanfattning}
-\selectlanguage{swedish}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris vehicula ante et molestie molestie. Mauris venenatis facilisis massa. Curabitur iaculis odio lacinia convallis tempor. Morbi volutpat augue eget sem eleifend pharetra. Nam a molestie dolor, a blandit sem. Donec volutpat ligula nec risus commodo, et sollicitudin odio tempus. Quisque tortor erat, vulputate a luctus eget, faucibus eget mauris. Aliquam viverra euismod vestibulum. Sed mollis sapien in lacus maximus consectetur. Donec rhoncus elementum velit non blandit. Nullam sagittis gravida nisl vitae mollis. Aliquam nisl magna, pretium ut imperdiet ac, venenatis in ex. Integer at lacinia tellus.
+\begin{otherlanguage}{swedish}
+	Algoritmer för maskininlärning används i allt högre grad i praktiskt taget alla delar av våra liv. En anledning till deras framgång är förmågan att lära sig komplexa representationer från enorma datamängder. Datorers beräkningshastighet ökar inte lika snabbt som de volymer av data vi vill lära oss från, vilket naturligt leder till algoritmer som måste vara resurseffektiva och parallella.
+	I och med att användandet av maskininlärning fortsätter att breda ut sig sig blir förmågan att anpassa sig till en föränderlig värld och att hantera osäkerhet allt viktigare.
 
-Pellentesque efficitur tellus vel ligula facilisis, ut gravida justo rhoncus. Proin viverra feugiat faucibus. Nullam posuere tellus aliquam euismod blandit. Proin viverra lobortis nulla, ut iaculis nulla tempor et. Cras viverra convallis nibh nec rhoncus. Sed sed aliquet velit. Sed cursus purus eu erat imperdiet, id bibendum est feugiat. Curabitur sit amet convallis eros, quis placerat libero. Nulla semper quis libero ac pulvinar. Aliquam imperdiet augue eu felis porta, id cursus diam fermentum. Vivamus vehicula libero nec diam pharetra porttitor ut at velit. Integer eros justo, blandit in tristique in, placerat nec nunc. 
+	I denna avhandling utvecklar vi skalbara algoritmer för maskininlärning med ett fokus på effektiva distribuerade online-beräkningar. Vi använder oss av \emph{approximationer} för att dramatiskt reducera beräkningskostnaden jämfört med exakta algoritmer, utvecklar algoritmer för \emph{inkrementell inlärning} som hanterar föränderliga miljöer med begränsad beräkningsbudget, samt utvecklar parallella och distribuerade algoritmer som garanterar att våra algoritmer skalar till massiva datamängder.
+
+	Avhandlingen börjar med att beskriva en skalbar algoritm för att beräkna likhet mellan noder i en graf och för att upptäcka begrepp. Vi visar dess användbarhet i flera olika domäner och dess skalbarhet genom att träna på ett av de största tillgängliga text-korpusen på ett fåtal minuter.
+	Baserat på en praktiskt tillämpning att prediktera längden på sessioner i media-strömning föreslår vi sedan flertal förbättringar på sätt att träna beslutsträd. Vi beskriver två algoritmer för att skatta osäkerheten för prediktioner gjorda av ``online random forests''. Vår metod uppvisar bättre träffsäkerhet än de bäst presterande metoderna inom forskningsfältet, samtidigt som den tar avsevärt mindre tid att köra.
+
+	Avhandlingen föreslår sedan en parallell och distribuerad algoritm för online träd-boostning som ger samma garantier gällande korrekthet som seriella algoritmer samtidigt som den i genomsnitt är flera storleksordningar snabbare.
+	Slutligen föreslår vi en algoritm som tillåter gradient-boostad träning av beslutsträd att distribueras över både datapunkts- och attributs-dimensioner. Vi visar att vi kan reducera mängden kommunikation avsevärt för glesa datamängder i jämförelse med existerande metoder som bara distribuerar beräkningarna längs datapunktsdimensionen och använder täta representationer av datamängder.
+\end{otherlanguage}
 
 \end{sammanfattning}
 
