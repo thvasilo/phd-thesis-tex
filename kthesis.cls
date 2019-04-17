@@ -255,7 +255,7 @@
 
 % Set degree fields
 \if@kthesis@phd
-  \degreeSwe{teknologie doktorsexamen  i Informations- och Kommunikationsteknik}
+  \degreeSwe{teknologie doktorsexamen  i datalogi}
   \degreeThesis{doctoral thesis}
 \fi
 \if@kthesis@lic
