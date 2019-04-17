@@ -2,7 +2,7 @@
 \label{ch:bg-online-learning}
 
 In this chapter we will provide an introduction to online learning, which is the learning
-setting for Papers \boostvhtNum and \uncertaintreesNum. We start by providing an brief
+setting for Papers \boostvhtNum and \uncertaintreesNum. We start by providing a brief
 overview of the kinds of models available for online learning in Section \ref{sec:bg-ol-models}.
 Since our work focuses on decision trees and ensemble methods we present an overview of
 the state of the art in Sections \ref{sec:bg-dt-online-trees} and \ref{sec:bg-ol-ensembles} respectively.
@@ -12,7 +12,7 @@ open-source software for online learning in Section \ref{sec:bg-ol-software}.
 \section{Models}
 \label{sec:bg-ol-models}
 
-As with batch learning, there exists of variety of models in the online
+As with batch learning, a wide range of models exists in the online
 learning domain. Commonly, these are models that were first developed
 for the batch setting and subsequently adapted to online learning.
 In this section we focus on supervised learning methods for
@@ -55,7 +55,7 @@ the advantage that removing the effect of older data points is easy
 compared to say an ANN model, but it is still highly model-dependent.
 The authors suggest different ways to deal with
 concept drift in IBLStreams. They mention the limitations of a non-adaptive, window-based
-approach and suggest that IBL methods are good candidates for learning in
+approach and suggest that IBL methods are good candidates for learning
 under drift because of their locality property, that is, that introducing
 a new example will only affect the predictions made around that region.
 In theory, an example should only be included in the model if it improves the
@@ -82,7 +82,7 @@ For regression these models have the general form~\cite{esl}:
 \end{equation}
 
 \noindent
-where $p$ the number of features in the dataset, where we assume a linear relationship between the dependent and independent predictors.
+where $p$ is the number of features in the dataset, where we assume a linear relationship between the dependent and independent predictors.
 
 One of the earliest examples of an online linear classification model is the seminal
 Perceptron algorithm \cite{perceptron} that tries to find a separating hyperplane
@@ -93,7 +93,7 @@ of stochastic gradient descent, that moves the coefficients
 of the model according to the gradient of a single data point
 and a step size parameter.
 The Perceptron is a simple algorithm that however has many drawbacks
-noted in \cite{esl}, regarding the stability of the algorithm
+noted by \citet{esl}, regarding the stability of the algorithm
 for perfectly separable data, its dependence on correctly setting
 the step size, and the fact that the algorithm does not
 converge when the data are not separable.
@@ -101,15 +101,15 @@ Another important family of linear algorithms designed for the online domain
 are Passive-Aggressive (PA) algorithms \cite{passive-aggressive}.
 These are margin-based algorithms for classification, regression and
 sequence prediction that solve a constraint optimization problem.
-For every incoming incoming example, PA algorithms
+For every incoming example, PA algorithms
 try to achieve a margin between the predicted value and true label
 by either not changing the model (passive) when the margin is satisfied,
 or by applying the necessary correction to the model coefficients
 to enforce a zero loss when the margin is not satisfied (aggressive).
 While being a linear model, PA algorithms can make use of the kernel trick to
 employ non linear predictors, as done by the seminal work
-on Support Vector Machines (SVM) by \citet{svm-book}, which we
-focus on in the sequel.
+on Support Vector Machines (SVM) by \citet{svm-book} described next.
+\todo{Naive Bayes: does not have the drawbacks of perceptron, stable, finds a solution for sep and nonsep data, and dependency on parameter settings ref: Duda-Hart 1970s}
 
 \subsection*{Support Vector Machines}
 Support Vector Machines, similar to the Perceptron, are algorithms for determining
@@ -124,7 +124,7 @@ in memory, as they grow linearly with the number of prediction errors
 \cite{budget-classification}. The work of \citet{budget-classification}
 deals with this issue by providing an online learning algorithm
 that enforces sparsity through an insertion and deletion phase.
-Once an erroneous example is inserted, the algorithm will look
+Once an example with an erroneous prediction is inserted, the algorithm will look
 for past examples that are made redundant by the new point,
 and remove those to save memory.
 Another approach is taken by the Forgetron \cite{forgetron} which,
@@ -137,8 +137,8 @@ loss.
 The Passive-Aggressive algorithm has also been modified
 to perform kernel learning on a budget \cite{pa-budget},
 i.e. with a bounded model size, by introducing an additional
-constraint to the original problem that removes one support
-vector for every new error once the budget is met.
+constraint to the original problem that removes one old support
+vector for every new one once the budget is met.
 One key drawback of these methods
 is the need to determine a budget for the model size beforehand.
 More recently, new methods have been proposed to scale up
@@ -323,7 +323,10 @@ gradient descent.  Finally, FIMT includes a change detection system in order to
 adapt to concept drift
 based on the Page-Hinckley change detection test~\cite{ph-test, ph-test2}.
 
-\todo{Online RFs?}
+Finally we mention online tree ensemble methods, like the online
+random forests developed by \citet{Saffari2009onlineRF} and \citet{Gomes2017},
+and the online boosting tree developed by \citet{online-gradient-boosting} and
+\citet{online-boost-cv-7}. We focus on online ensemble methods in Section \ref{sec:bg-ol-ensembles}.
 
 \subsubsection*{Mondrian Forests}
 
@@ -424,9 +427,9 @@ The online bagging model proposed by \citet{Oza2001online} and further explored 
 	\Return $\widehat{y}$ \;
 \end{algorithm}
 
-The main insight of the algorithm, commonly referred to as \emph{OzaBag}, is that we can approximate the binomial distribution
-used to determine whether a sample will be included the bootstrap
-sample using a Poisson distribution\todo{Verify this claim, is it in the orig. paper?}. The distribution of bagging sample sizes, $K$, tends
+The main insight of the algorithm, commonly referred to as \emph{OzaBag}, is that for large $N$, we can approximate the binomial distribution
+used to determine whether a sample will be included in the bootstrap
+sample using a Poisson distribution. The distribution of bagging sample sizes, $K$, tends
 to a Poisson($\lambda = 1$) as the number of samples $N \rightarrow \infty$. To use bagging online then,
 for each incoming example and
 for each member of the ensemble \ensemble, we draw a sample from a Poisson($\lambda = 1$). We use to the drawn scalar $k$ to modify the weight of the incoming instance, and train the algorithm using the updated weight. \citet{Oza2001online} prove that as the number of samples N grows
@@ -453,7 +456,7 @@ of weights.
 
 Online boosting has found more widespread use compared to online bagging ensembles,
 as it's been used successfully in many computer vision applications, with a focus on
-object tracking \cite{online-boost-cv4, online-boost-cv, online-boost-cv3, online-boost-cv2, online-boost-cv5, online-boost-cv-6}.
+object tracking \cite{online-boost-cv4, online-boost-cv, online-boost-cv3, online-boost-cv2, online-boost-cv5, online-boost-cv-6, online-boost-cv-7}.
 As a result many different boosting algorithms have been proposed, some aimed at a specific application like object tracking, and others that are general learning algorithms.
 
 We will focus on the original algorithm proposed by \citeauthor{Oza2001online},
@@ -496,7 +499,8 @@ their ensemble can use the set of weak learners to achieve a small
 error.
 
 The work of \citet{Beygelzimer2015optimal} improves upon OSBoost,
-by providing an optimal algorithm in terms of error rate, and also provides
+by providing an optimal algorithm in terms of ``the number of weak learners
+and the sample complexity needed to achieve a specified accuracy'', and also provides
 a parameter-free algorithm that does away with the need to set the $\gamma$
 parameter of the OSBoost.
 The optimal algorithm, Online.BBM, is based on the Boost-by-majority batch
@@ -676,7 +680,7 @@ Similarly to MOA, it provides learning algorithms and evaluation methods, and it
 design makes it easy to extend with new algorithms.
 We have used SAMOA as the development framework for \boostvht.
 
-Another library aimed at distributed stream learning is StreamDM \cite{streamdm}.
+Another library aimed at distributed stream learning is the StreamDM library~\cite{streamdm}.
 StreamDM also inherits some of the design aspects of MOA, providing similar interfaces
 to access learning algorithms and run evaluations, but unlike SAMOA
 is built to run on top of only the Apache Spark~\cite{spark} streaming engine.

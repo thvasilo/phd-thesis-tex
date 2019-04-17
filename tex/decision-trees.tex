@@ -1,7 +1,7 @@
 \chapter{Decision Trees}
 \label{ch:bg-decision-trees}
 
-Decision trees are one of the most important and successful algorithms
+Decision trees is one of the most important and successful algorithms
 in machine learning. They have seen widespread adoption in practically
 every area of machine learning, from their original domain in classification
 and regression, to ranking~\cite{lambdarank}, semi-supervised learning~\cite{semi-super-trees}, survival analysis~\cite{survival-forests},
@@ -29,7 +29,7 @@ that fall under the same region in the partitioned space. For regression,
 using the sum of squared errors as the objective function, the best possible
 $\hat{c}_m$ is the average of the label values in that region.
 Finding the optimal partitioning for decision trees is known to be
-NP-complete \cite{dt-np-complete} and the best possible method
+NP-complete \cite{dt-np-complete} and the best tractable method
 is to use a greedy algorithm to select the splits~\cite{dt-hardness}.
 In the regression case, CART achieves that by selecting splits
 that minimize the squared error of the created binary split, selecting
@@ -45,7 +45,7 @@ node impurity measure like the Gini index or the cross-entropy, defined as:
 \end{equation}
 
 \noindent
-where $k$ the class, $m$ the node and $\hat{p}_{mk}$ the proportion of
+where $k$ is the class, $m$ the node and $\hat{p}_{mk}$ the proportion of
 the observations for class $k$ in the node $m$.
 
 While one could keep growing a decision tree until it perfectly fits the data,
@@ -96,7 +96,8 @@ random forests and gradient boosting respectively, or the introductory monograph
 \subsection{Random Forests}
 \label{sec:bg-dt-random-forests}
 
-Random Forests (RF), originally proposed by \citet{random-forests}, have been shown to be one of the
+Random Forests (RF), originally proposed by \citet{random-forests} based on the work
+of \citet{amit-rf}, have been shown to be one of the
 most versatile algorithms in machine learning~\cite{hundreds-classifiers}. They are an
 ensemble method the combines multiple randomized trees, each trained with a sample
 of the original dataset, and averages their predictions to produce the final outcome.
@@ -104,12 +105,13 @@ Random forests can deal with classification or regression tasks and provide esti
 of the importance of variables, aiding in their interpretability.
 
 Following the notation in \cite{random-forest-survey}, the algorithm works by growing
-$M$ randomized trees, each on a sample from the original dataset $a_n$. The sample
+$M$ randomized trees, each on a sample $a_n$ from the original dataset, with $p$ features.
+The sample
 $a_n$ can be taken with or without replacement, although usually it is a boostrap
 sample~\cite{bootstrap} with a size equal to the original dataset. In the original
 algorithm by \citeauthor{random-forests}, the trees are grown using the CART criteria,
 with the difference that we limit the number of features being
-considered for the splits, with \citeauthor{random-forests} selecting one feature or
+considered for the splits, with \citeauthor{random-forests} selecting a single feature or
 $log_2{p} + 1$, while \citeauthor{random-forest-survey} recommend using $\lceil p/3 \rceil$;
 see \cite{rf-parameters} for an investigation of RF parameter settings.
 For the regression task the predictions of the forests are calculated
@@ -232,7 +234,7 @@ First, we use the existing ensemble to make predictions for every data point in 
 set. Second, we use the approximated objective function to determine the first and second order
 gradients for each data point. Finally, we use the calculated gradients to greedily determine
 the optimal split for every leaf in the tree. When we mention gradients here we are referring
-to both the first order and second order gradients for $x_i$, denoted as $g_i$ and $h_i$
+to both the first order and second order gradients of the loss function for $x_i$, denoted as $g_i$ and $h_i$
 respectively.
 
 We will focus on the third part of the training stage in our description, as that entails the most

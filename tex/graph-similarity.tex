@@ -11,8 +11,8 @@ In this chapter we provide an introduction to the problem and
 highlight some of the established approaches as well as recent
 research focused on scalability. We divide the approaches into local
 and global based on their ability to determine the similarity of nodes
-based on local information or by looking into the entire graph, as done in
-~\cite{link-prediction-survey}.
+based on local information or by looking into the entire graph, as proposed by
+~\citet{link-prediction-survey}.
 In this chapter we focus on
 measures that use the structure of the graph to determine the similarity,
 however for specific applications there exist similarity measures
@@ -21,7 +21,7 @@ structure of the Wordnet databaset \cite{wordnet-similarity, wordnet-relatedness
 
 As the problem is closely related to link prediction, we point the interested reader to
 the survey by \citet{link-prediction-survey} or the more
-recent \cite{link-prediction-survey-2017} on the subject,
+recent survey by \citet{link-prediction-survey-2017} on the subject,
 that include vertex similarity algorithms.
 
 \subsection*{Preliminaries}
@@ -40,7 +40,7 @@ We denote the adjacency matrix of the graph by $\mathbf{A}$.
 
 Local similarity measures generally determine the similarity between
 nodes by examining structural properties between nodes that
-are 2 hops apart in the graph. While this limits their ability to model long-range
+are two hops apart in the graph. While this limits their ability to model long-range
 similarities, they have been shown to have accurate results, and are computationally
 efficient~\cite{link-prediction-survey}. In the sequel we present some of the most popular local similarity measures.
 
@@ -144,7 +144,7 @@ graph Laplacian, $L$ as defined in \cite{link-prediction-survey}\todo{Define Lap
 
 As a general graph problem the applications of node similarity are as varied
 as the problems that we can model using a graph representation. In this
-section we will provide a few example application that exemplify the importance
+section we will provide a few example applications that exemplify the importance
 of the problem.
 
 One of the areas where node similarity has been most successful is link
@@ -153,14 +153,14 @@ edges in a graph, which might represent real connections that are encoded
 in the graph, or connections which are yet to happen in the real world.
 In the taxonomy of link prediction methods proposed by
 \citet{link-prediction-survey-2017}, node similarity is one of the
-four major categories of algorithms, alon with probabilistic and
+four major categories of algorithms, along with probabilistic and
 statistical methods, algorithmic methods and pre-processing methods.
 The usual way that node similarity methods are used for link prediction
 is that node pairs are ranked by the similarity score given by the
 algorithm and the top-ranked pairs of nodes that are currently not connected
 in the graph are considered the most likely to form a connection.
 In the paper describing the Resource Allocation measure, \citet{resource-allocation-sim}
-example consider the probability of a true missing link
+consider the probability of a true missing link
 being given a higher score than a randomly chosen missing link
 to evaluate the accuracy of their method.
 
@@ -168,7 +168,7 @@ to evaluate the accuracy of their method.
 Node similarity has also been explored in the context of recommendation.
 The Average Commute Distance~\cite{average-commute-distance} metric mentioned above, uses the distance
 required by a random walker to move between two nodes as an indication
-of the similarity between nodes. The authors make us of this score
+of the similarity between nodes. The authors make use of this score
 to provide recommendations, either using a direct approach, where
 the similarity between users and items is calculated on the same
 graph, or indirectly, by first measuring the similarity between

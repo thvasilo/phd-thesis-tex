@@ -10,7 +10,7 @@ making it possible to train them on unbounded datasets.
 
 In this chapter we conclude this dissertation, by first providing a
 summary and critical view of the results, and putting our research
-in context with the state of the art.
+in context with the state-of-the-art.
 We close the chapter with potential future work directions and open
 problems.
 
@@ -18,13 +18,19 @@ problems.
 \todo{Haven't really placed the work in the context of SOTA here...}
 We first proposed an approximate way to calculate similarities between
 nodes in a graph, and discover concepts in the derived similarity
-graph. Our method dramatically reduces the computational cost
+graph. Our method reduces the computational cost
 by localizing computation in the nodes' neighborhoods, and taking advantage
 of the sparse graph structure to further optimize the computation with controllable
 error. We demonstrated the generality of the approach in several domains and presented
 qualitative as well as quantitative evidence of its accuracy. In addition, we demonstrate
 the scalability of the algorithm by training on one of the biggest text datasets
-available in minutes.
+available in minutes. Compared to other global approaches like SimRank \cite{simrank}
+the computational cost is linear in the number of nodes in the graph compared to cubic
+complexity for SimRank.
+Compared to local approaches like simply taking the Jaccard coefficient between nodes, our
+approach has controllable error, is designed from the ground up with the distributed
+setting in mind, and we propose a concept discovery step on top of the similarity
+calculation.
 
 We then presented a real-world use case of music streaming session length analysis and prediction,
 which demonstrated the unique characteristics of music streaming listeners, and developed
@@ -60,7 +66,7 @@ order of magnitude improvements in the communication cost of the training proces
 
 \section{Discussion}
 
-We would to discuss here the extent to which this work answers the research
+We discuss here the extent to which this work answers the research
 question posited for our thesis which we reproduce here:
 
 \begin{displayquote}
@@ -100,18 +106,18 @@ nodes in the graph that are more than two hops away is currently, by design, not
 in the model. However, there could be a way to calculate these by following paths in
 the resulting similarity graph.
 
-For our work in the estimation of uncertainty in online decision trees, our foremost
+For our work on the estimation of uncertainty in online decision trees, our foremost
 priority would be the theoretical justification of the validity of the produced intervals,
 i.e. to prove that, like the batch QRF and conformal prediction, the produced intervals
 are consistent estimators given the requested significance level. The ability to
 deal with concept drift at the meta-algorithm level would also be welcome, instead
 of relying on the underlying weak learner to provide this capability.
 
-For our work parallel boosted online trees, one weakness are datasets with
-a small number of features, which limits the potential speedup of the
+Our work on parallel boosted online trees has the drawback that datasets with
+a small number of features will limit the potential speedup of the
 algorithm.
 An interesting direction to explore is to
-create efficient data-parallel and block-parallel algorithms that might sacrifice
+create efficient data-parallel or block-parallel algorithms that might sacrifice
 the correctness guarantees of our feature-parallel algorithm for more available
 parallelism.
 

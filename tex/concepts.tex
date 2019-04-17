@@ -22,7 +22,7 @@ generated image tags as input, in Section \ref{sec:concepts-openimages}.
 
 In our approach we model the objects as nodes in graph and their interactions as edges,
 initially weighted by a simple measure of correlation between the objects. In text for example, the
-nodes would be words and the edges could be weighted by their mutual information \cite{mutual-information-nlp}.
+nodes would be words and the edges could be weighted by their pointwise mutual information \cite{mutual-information-nlp}.
 
 The computation of all-to-all similarities in a graph can quickly become
 intractable for large graphs. The popular SimRank algorithm developed by
@@ -41,23 +41,23 @@ We first create a \emph{correlation graph} that models simple correlations betwe
 These correlations are easy to extract and do not necessarily hold semantic information.
 For example,
 given a corpus of text we can use a
-co-occurence measure, like mutual information, between any two pairs of
+co-occurence measure, like pointwise mutual information, between any two pairs of
 words and use that as the edge weight between the two in the correlation graph.
 We then compute the similarities between nodes by applying a transformation on this graph, to produce a graph which surfaces deeper,
 semantic interactions which we term the \emph{similarity graph}.
-In order to determine the similarity between objects in graph, we examine
+In order to determine the similarity between objects in a graph, we examine
 their agreement in correlations to other objects: if two nodes are highly
-correlated to similar sets of nodes, they are more likely to be similar themselves.
+correlated to many common nodes, they are more likely to be similar themselves.
 
-However, computing these all-to-all similarities can be challenging for massive
-correlation graphs.
+However, computing these all-to-all similarities can be challenging for
+correlation graphs with billions of nodes.
 As in other works in this thesis, we apply a combination of using approximations to limit
 the computational cost of the method, and develop a distributed algorithm that allows
 us to scale-out learning and take advantage of modern computing clusters.
 
 The first approximation we employ makes use of a characteristic that many real-world datasets exhibit,
-that is, there exists a long-tail distribution of interactions between the items in a graph. These type
-of ``small-world'' graphs, appear in areas like gene co-expression \cite{gene-small-world}, semantic networks \cite{semantic-small-world},
+that is that most objects are uncorrelated and the graph is therefore sparse. These type
+of graphs, appear in areas like gene co-expression \cite{gene-small-world}, semantic networks \cite{semantic-small-world},
 word co-occurrences \cite{words-small-world} and social networks (see \cite{barabasi-small-world} for further
 examples).
 This allows us to prune the input correlation graph significantly before transforming it,
@@ -65,7 +65,7 @@ while maintaining a controllable and small approximation error.
 
 The second approximation has to do with the locality of the computation. Instead of trying
 to solve the computationally intractable all-to-all similarity problem, we instead only look at
-nodes that are one hop apart, keeping the computation local and dramatically computation cost per node in the graph.
+nodes that are two hops apart, keeping the computation local and dramatically reducing the cost per node in the graph.
 This approximation is what makes the distributed implementation of the algorithm efficient.
 In order to compute, for each pair of nodes in a neighborhood, their common sets of correlated nodes,
 we need only examine the common sets of incoming edges per node. By distributing our graph
@@ -148,7 +148,7 @@ classes. The complete training
 dataset contains 9,011,219 images scraped from the Flickr service\footnote{\url{www.flickr.com}}, of complex scenes annotated with 8.4 objects per image on average.
 
 We use the OpenImages data to create a correlation graph of objects: We form
-a clique for every object that exists together in one image, creating a graph that represents
+a clique for every set of objects that exists together in one image, creating a graph that represents
 how objects commonly appear together in real images. Take for example the annotated
 image shown in Figure \ref{fig:horse-hat}. The image is annotated with both the
 \emph{horse} and \emph{cowboy hat} labels. All the labels in the image will form
@@ -157,7 +157,7 @@ extend this graph, by connecting the \emph{cowboy hat} label with the \emph{guit
 label, creating a second degree link between the \emph{horse} and \emph{guitar} labels.
 By incorporating all such images, our correlation graph will have a representation of objects
 that tend to appear together in the real world. Using this graph as input, we can apply our similarity
-transformation to group together objects that belong to semantically similar classes
+transformation to group together objects that belong to semantically similar classes,
 based on the similarity between the contexts in which they appear in, in the real world.
 Finally we can apply our community detection algorithm to group together items to form
 visual concepts in the similarity graph.
@@ -206,7 +206,7 @@ images that exist in services like Flickr to create visual concepts.
 	\begin{subfigure}{\textwidth}
 		\centering
 		\includegraphics[height=0.44\textheight]{openimage-communities-military}
-		\caption{A concept that brings together uniformed people and military objects.}
+		\caption{A concept that brings together uniformed professions and military objects.}
 		\label{fig:openimages-military}
 	\end{subfigure}
 	 %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.

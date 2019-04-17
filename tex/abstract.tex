@@ -14,22 +14,22 @@ increasingly important.
 
 In this thesis we develop scalable machine learning algorithms, with a focus on
 efficient, online, and distributed computation. We make use of \emph{approximations}
-to dramatically reduce the computational cost of exact algorithms, develop
+to dramatically reduce the computational cost of exact algorithms, and develop
 \emph{online learning} algorithms to deal with a constantly changing environment
-under a tight computational budget, and develop \emph{parallel and distributed} algorithms
-to ensure that our algorithms can scale to massive datasets.
+under a tight computational budget. We design \emph{parallel and distributed} algorithms
+to ensure that our methods can scale to massive datasets.
 
-We first propose a scalable algorithm for vertex similarity calculation and concept
+We first propose a scalable algorithm for graph vertex similarity calculation and concept
 discovery. We demonstrate
-its applicability to multiple domains and demonstrate its scalability by training on
-one of the largest text corpora available in the order of minutes.
+its applicability to multiple domains, including text, music, and images, and demonstrate its scalability by training on
+one of the largest text corpora available.
 Then, motivated by a real-world use case of predicting the session length in media streaming, we propose improvements to several aspects of learning
 with decision trees. We propose two algorithms to estimate the uncertainty in the predictions
 of online random forests. We show that our approach can achieve better accuracy than the
-state of the art while being an order of magnitude faster to run.
+state of the art while being an order of magnitude faster.
 We then propose a parallel and distributed online tree boosting algorithm
 that maintains the correctness guarantees of serial algorithms while providing an order of
-magnitude speedups on average. Finally, we propose an algorithm that allows for gradient boosted trees training to be
+magnitude speedup on average. Finally, we propose an algorithm that allows for gradient boosted trees training to be
 distributed across both the data point and feature dimensions. We show that we can
 achieve communication savings of several orders of magnitude for sparse datasets,
 compared to existing approaches that can only distribute the computation across the

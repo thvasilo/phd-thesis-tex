@@ -82,9 +82,9 @@ worker, across the ensemble. This makes our communication pattern efficient:
 We only need to send $p$  messages per instance, where $p$ is the chosen
 parallelism level, compared to sending $m$ messages, where $m$ the
 number of features. This will dramatically
-reduce the number of messages sent, since we $m \gg p$ in the high-dimensional
+reduce the number of messages sent, since $m \gg p$ in the high-dimensional
 settings we are focusing on. In addition, compared to existing
-parallel boosting methods like AdaBoost.PL \cite{adaboost-pl} that need to communicate the complete
+parallel boosting methods like AdaBoost.PL \cite{adaboost-pl} that needs to communicate the complete
 models between each update, we only need to communicate the split decisions which are
 much more compact (3 floating point values instead of a complete tree data structure).
 Finally, our approach allows us to send each attribute slice only once to
@@ -389,7 +389,7 @@ at least 90\% of the total runtime of the training.
 
 In Figure \ref{fig:block-gbt-hist-size} we can see the benefits of sparse communication:
 For the highly sparse URL and avazu datasets the reduction in communication is five and
-three orders of magnitude respectively. The sparse histograms however introduce additional computational
+two orders of magnitude respectively. The sparse histograms however introduce additional computational
 cost: unlike dense data structures that are contiguous in memory, sparse structures use
 indirect addressing which makes building and accessing these histograms cache-unfriendly.
 This, in combination with the overhead introduced by the use of the parameter server,
