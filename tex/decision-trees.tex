@@ -19,7 +19,7 @@ by \citet{decision-trees-book} or the extended survey by \citet{tree-survey}.
 The two original tree-learning algorithms, the
 Classification and Regression Trees (CART)~\cite{breiman1984cart} algorithm and the ID3
 algorithm~\cite{id3}, were developed in parallel. In our description we will
-focus on the CART regression algorithm, following the description from \cite{esl}.
+focus on the CART regression algorithm, following the description from \citet{esl}.
 
 Decision trees create recursive binary partitions of the input space,
 with axis parallel cuts. Let $R_1, ..., R_M$ denote the $M$ regions created by
@@ -29,7 +29,7 @@ that fall under the same region in the partitioned space. For regression,
 using the sum of squared errors as the objective function, the best possible
 $\hat{c}_m$ is the average of the label values in that region.
 Finding the optimal partitioning for decision trees is known to be
-NP-complete \cite{dt-np-complete} and the best tractable method
+NP-complete \cite{dt-np-complete}. Consequently a common choice
 is to use a greedy algorithm to select the splits~\cite{dt-hardness}.
 In the regression case, CART achieves that by selecting splits
 that minimize the squared error of the created binary split, selecting
@@ -57,10 +57,11 @@ nodes, or having a minimum number of examples in each terminal node
 \cite{breiman1984cart}. This process is also important in limited
 memory settings where deleting and merging nodes can lead to models
 that take up less space in memory, especially in ensemble approaches
-mentioned in the sequel. A creative approach to reducing model size are decision
-jungles that change the data structure being learned from a tree to DAG, allowing
-nodes in a the tree to have more than one parent,
-providing the same learning capability using fewer nodes~\cite{decision-jungles}.
+mentioned in the next section. A creative approach to reducing model size are the so called \emph{decision
+jungles} ~\cite{decision-jungles} that change the data structure being learned from a tree to a Directed
+Acyclical Graph (DAG), allowing
+nodes in the DAG to have more than one parent,
+providing the same learning capability as a tree, while using fewer nodes.
 
 
 \section{Ensembles of Decision Trees}
@@ -68,13 +69,13 @@ providing the same learning capability using fewer nodes~\cite{decision-jungles}
 
 The success and popularity of decision trees comes in large part
 from their use in model ensembles.
-As mentioned in Section \ref{sec:bg-ol-ensembles}, the two dominant paradigms in ensemble learning are \emph{bagging} \cite{bagging} and
+The two dominant paradigms in ensemble learning are \emph{bagging} \cite{bagging} and
 \emph{boosting} \cite{boosting-schapire, boosting-freund-schapire}. Both
 methods can be interpreted using a resampling procedure. Bagging is
-based on the bootstrap \cite{bootstrap} resampling method and will re-use samples
+based on the bootstrap resampling method \cite{bootstrap} and re-uses samples
 to train the members of the ensemble, and average their predictions.
 % Bagging can be used to reduce both the bias and variance of a learning method.
-Boosting methods on the other hand will assign increased weights to the
+Boosting methods on the other hand assign increased weights to the
 hardest instances in the data. In the ``AdaBoost.M1'' version of the algorithm,
 a new weak learner is trained at each iteration, and a weighted sum of
 the decisions of each learner is taken to produce the final prediction.
@@ -83,7 +84,7 @@ for boosting and formalized \emph{gradient boosting} as gradient descent in func
 space.
 
 Decision trees have been used as parts of either bagging
-or boosting ensembles with great success~\cite{hundreds-classifiers}. Their characteristics as a fast
+or boosting ensembles with great success~\cite{hundreds-classifiers, xgboost}. Their characteristics as a fast
 non-linear learner
 with high flexibility fit well both the bagging and boosting paradigms.
 The \emph{random forest} algorithm uses bagging to train an ensemble
@@ -104,19 +105,19 @@ of the original dataset, and averages their predictions to produce the final out
 Random forests can deal with classification or regression tasks and provide estimates
 of the importance of variables, aiding in their interpretability.
 
-Following the notation in \cite{random-forest-survey}, the algorithm works by growing
+Following the notation in \citet{random-forest-survey}, the algorithm works by growing
 $M$ randomized trees, each on a sample $a_n$ from the original dataset, with $p$ features.
 The sample
 $a_n$ can be taken with or without replacement, although usually it is a boostrap
 sample~\cite{bootstrap} with a size equal to the original dataset. In the original
 algorithm by \citeauthor{random-forests}, the trees are grown using the CART criteria,
-with the difference that we limit the number of features being
-considered for the splits, with \citeauthor{random-forests} selecting a single feature or
-$log_2{p} + 1$, while \citeauthor{random-forest-survey} recommend using $\lceil p/3 \rceil$;
-see \cite{rf-parameters} for an investigation of RF parameter settings.
-For the regression task the predictions of the forests are calculated
+with the difference that they limit the number of features being
+considered for the splits, with \citeauthor{random-forests} selecting a either single feature or
+$log_2{p} + 1$ features, while \citeauthor{random-forest-survey} recommend using $\lceil p/3 \rceil$;
+see \cite{rf-parameters} for an investigation of the RF parameter settings.
+For the regression task, the predictions of the forests are calculated
 by taking the average prediction of all trees, while for classification
-we take a majority vote among all trees.
+they take a majority vote among all trees.
 
 The random sampling and independent growing of each tree provides two distinct advantages
 to the RF algorithm. First, because the trees are grown independently, unlike the boosted trees
@@ -127,12 +128,14 @@ each bootstrap sample. The situation changes
 however for distributed data because of the nature of the bootstrap: depending
 on the sample selection there might be the need for data points to be communicated
 over the network, with a resulting high communication cost.
-\citet{ensembles-bites} propose instead to train the trees independently
-and merge the votes, or one could make use of the bag of little bootstraps
-to train the models \cite{bag-of-boostraps}. Alternatively, we can create split
+\citet{ensembles-bites} propose instead training the trees independently
+and merging their votes, or one can use of the ``bag of little bootstraps''
+\cite{bag-of-boostraps} to train the models, to avoid shuffling the complete
+dataset. Alternatively, we can create split
 histograms on data partitions and communicate those over the cluster to determine the
 best split for each leaf, similar to how trees are grown for distributed
-gradient boosted tree methods~\cite{xgboost, lightgbm}.
+gradient boosted tree methods~\cite{xgboost, lightgbm}, which we expand up in
+Section \ref{sec:bg-dt-gbts}.
 
 Second, the fact that for each tree some samples from the dataset are not
 used to train it, known as \emph{out-of-bag} (OoB) samples, creates opportunities
@@ -156,27 +159,43 @@ validation set, a property we exploit in \uncertaintrees as well.
 \subsection{Gradient Boosted Trees}
 \label{sec:bg-dt-gbts}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=\columnwidth]{boosted-trees}
+	\caption{Example of growing a boosted tree ensemble. At each iteration we add a new
+	tree, that is trained using the errors (gradients) of the previous ensemble.}
+	\label{fig:boosted-trees}
+\end{figure}
+
+
 Gradient boosted trees have risen to be one of the most popular algorithms
-in machine learning due to their speed, scalability, and accuracy. Efficient
+in machine learning due to their speed, scalability, and accuracy. As
+a result, they are being used in mission-critical production use-cases such as Web search
+ranking \cite{mcrank, catboost} and click-through rate prediction \cite{ctr-facebook}.
+Efficient
 implementations like XGBoost \cite{xgboost} and LightGBM \cite{lightgbm}
-are now widely deployed in production use-cases, and further emphasis
+are now widely deployed and further emphasis
 is being given to efficient training \cite{dimboost} and inference \cite{quickscorer, tree-cache-conscious, tree-runtime-opt}.
 In this section we will describe the training and prediction process of GBTs,
 with a focus on the scalability aspect of the algorithm. We provide an in-depth
 description of the histogram construction algorithm which we have found to be missing
 from most relevant literature. We refer the interested reader to a recent overview
-of the optimization process of GBTs by \citet{biau-optimization}.
+of the optimization process of GBTs by \citet{biau-optimization} for details on GBT
+training.
 
 \subsubsection*{Model}
 
 The gradient boosted tree model consists of an ensemble of decision trees,
 which are trained in an additive manner. At each iteration a new tree is added
-to the ensemble, chosen so that it minimizes an objective function.
+to the ensemble, chosen so that it minimizes an objective function. Figure \ref{fig:boosted-trees}
+shows the ensemble growing process at a high level. At each iteration we use the
+errors (gradients) of the previous step to train a new tree, and add it to the
+ensemble. This process is iterated for a pre-determined number of steps.
 
 We use the
-regularized objective formulation used
-in \cite{xgboost}, and follow their notation throughout our description of the algorithm.
-The objective function is shown in Eq. \ref{eq:gbt-objective}
+regularized objective formulation given
+by \citet{xgboost}, and follow their notation throughout our description of the algorithm.
+The objective function is shown in Eq. \ref{eq:gbt-objective}:
 
 \begin{equation}
 	\begin{split}
@@ -188,18 +207,20 @@ The objective function is shown in Eq. \ref{eq:gbt-objective}
 
 \noindent
 where $l(\cdot, \cdot)$ is a differentiable loss function and $\Omega$ is a regularization term
-that penalizes complex models. The regularization term takes into consideration
+that penalizes complex models, with $\lambda$ and $\gamma$ being regularization factors. The regularization term takes into consideration
 the number of leaves $T$ and the norm of the weights at the leaves $w$. This helps
 smooth the weights to avoid overfitting. This objective defined in XGBoost
 has then been used in follow-up GBT learning systems like LightGBM and
 DimBoost \cite{lightgbm, dimboost}.  A note here is that XGBoost
 assumes that the loss function is twice differentiable in order
-to calculate the Hessian analytically for each loss function.
-However, as shown recently in \cite{accelerated-gb} it is possible
+to calculate the Hessian analytically for each loss function,
+in order to reach the optimum quickly.
+However, as shown recently in \cite{accelerated-gb, accelerated-gbm} it is possible
 to use Nesterov's first-order accelerated gradient descent method
 \cite{nesterov-book} to produce gradient boosting models of similar
-accuracy, while being much more sparse in the number of components.
-In distributed training this would have the added benefit of reducing
+accuracy, utilizing far fewer trees (iterations), and hence speeding up training
+and inference.
+In distributed training this has the added benefit of reducing
 the amount of data being communicated by half, as we would only need to
 communicate first-order gradients and not Hessians, as we explain
 in the following section.
@@ -224,7 +245,9 @@ in the following section.
 		4 & 1.6 & 2 & 366 & 2.5 \\
 		\bottomrule
 	\end{tabular}
-	\caption{Example dataset.}
+	\caption{Example dataset. Each color-coded data point has its feature values, along
+	with a gradient value, for a squared error objective function, this would be the ensemble's
+	residual for the data point.}
 	\label{tab:example-data}
 \end{table}
 
@@ -240,7 +263,7 @@ respectively.
 We will focus on the third part of the training stage in our description, as that entails the most
 computationally intensive part of GBT learning, the construction of the \emph{gradient histograms.}
 Throughout our examples we'll be using the dataset from Table \ref{tab:example-data},
-which we color-code by instance to correspond to the figures used later on.
+which we have color-coded to correspond to the figures used later.
 
 As a tree grows, we partition the complete training set into smaller parts, with each data
 point ending up in one leaf as we drop it down the tree.
@@ -256,7 +279,7 @@ feature $f$.
 
 Enumerating every gradient-feature value combination requires that we calculate
 a gradient sum for each unique value
-of a feature. This can quickly become computationally impractical for real-valued features, as we might have millions or billion unique feature values.
+of a feature. This can quickly become computationally impractical for real-valued features, as we might have millions or billions of unique feature values.
 Systems like XGBoost and LightGBM instead use \emph{quantized histograms},
 where we accumulate gradients for ranges of values in histogram buckets for every feature.
 
@@ -271,10 +294,10 @@ have to be employed.
 The number of buckets to use is a
 parameter of the quantile sketch algorithm and depends on the type of sketch.
 There exist sketches where we select the number of buckets that
-will be used to represent the CDF, like the ones proposed by \citet{BenHaim2010parallel}
-or the number of buckets is derived from the approximation error we choose for the sketches, for example
+will be used to represent the CDF, like the ones proposed by \citet{BenHaim2010parallel}.
+Alternatively, the number of buckets is derived from the approximation error we choose for the sketches, for example
 for the sketches used by XGBoost or by the state-of-the-art KLL sketch \cite{karnin2016kll}
-used by DimBoost \cite{dimboost} and in our own work in Papers \uncertaintreesNum and \blockgbtNum.
+which we used in our own work in Papers \uncertaintreesNum and \blockgbtNum.
 
 \begin{figure}
 	\centering
@@ -327,8 +350,8 @@ leaf, by calculating the potential gain of each feature and split point combinat
 
 \noindent
 where $I_L, I_R$ determine the data points that end up to the left and right side of the split
-respectively, $I$ is the complete set of data for the leaf partition, and $\gamma$ a
-regularization parameter. At this point, to determine
+respectively, $I$ is the complete set of data for the leaf partition, and $\gamma$, $\lambda$ are
+regularization parameters. At this point, to determine
 the best split we need to simply iterate through all the feature-splitpoint combinations
 and rank every candidate according to their loss reduction (or \textit{gain}) and select the
 best one. In our example we have three buckets, and hence two possible split points for each feature. The result for our example data is shown in Table \ref{tab:gains}, where
@@ -352,7 +375,7 @@ point for the first feature (i.e. Feature 1 $< 5$) as the split condition.
 	\label{tab:gains}
 \end{table}
 
-In the case of millions of features and a large bucket count this can also be
+In the case of millions of features and a large bucket count $B$ this can also be
 computationally heavy operation, as we need to evaluate $|F| \times B$ split candidates.
 To mitigate this, we can apply efficient boosting approaches that try
 to reduce the number of features being examined. Examples include LazyBoost \cite{lazyboost}

@@ -99,7 +99,7 @@ trees~\cite{hundreds-classifiers}.
 In \blockgbt we extend distributed gradient boosted trees, by parallelizing their
 training across both the data point and feature dimensions, making use of block-distribution.
 Here we provide a summary of each part of the training algorithm that we had to
-adapt to the block-distributed setting. W provided an explanation of the training
+adapt to the block-distributed setting. We provided an explanation of the training
 process for GBTs in Section \ref{sec:bg-dt-gbts}, and we briefly re-iterate here:
 The training process can be roughly divided into three stages: First comes
 the prediction part, in which we use the existing ensemble to make a prediction
@@ -145,7 +145,7 @@ is given in Figure \ref{fig:quickscorer-example}, along with the corresponding
 bit-strings for each internal node. Each bit in the bit-string
 corresponds to one of the leafs of the tree, with the left-most bit corresponding
 to the left-most leaf. For example, the bit-string for the root is $0011$, because
-if the root evaluate to false, the two left-most leaves become inaccessible
+if the root evaluates to false, the two left-most leaves become inaccessible
 (we move right when a node evaluates to false), but either of the
 two right-most leaves could still be reached.
 
@@ -307,7 +307,7 @@ analysis task, and one rotating hyperplane. The baselines we test against are
 a single-threaded online boosting algorithm from the MOA \cite{bifet2010moa}
 library using the Hoeffding tree as a base learner, and the base VHT tree.
 We measure the speedup over the single-threaded algorithm, and use the
-robust Kappa\cite{bifet2015efficient} statistic to measure accuracy,
+robust Kappa~\cite{bifet2015efficient} statistic to measure accuracy,
 that considers the probability of agreement by chance in the evaluation.
 
 We start by showing that the boosted version of the algorithm performs
@@ -422,8 +422,8 @@ split points for each feature, we need to have an estimate of the CDF for each f
 can be calculated once at the beginning of learning, or once per leaf, to get a more accurate representation
 of the CDF in every leaf. \citet{xgboost} show that generating per-leaf (local) split points leads to the same overall
 accuracy as using the overall sketches (global) while using much less accurate sketches, thereby creating potential communication savings:
-A quantile sketch's size is determined by the level of error in the approximation we can
-accept~\cite{karnin2016kll}.
+The size of a quantile sketch is determined by the level of error in the approximation we can
+accept~\cite{karnin2016kll}, and the values we populate it with.
 
 However, when using dense communication we need to know the size
 of the sketch being communicated in advance. In a probabilistic sketch, this is only possible
@@ -466,6 +466,6 @@ Thus, these studies demonstrated how
 algorithmic co-design with distributed systems can lead
 to optimized runtimes and communication savings, aligning
 this work with our objectives and research question
-defined in Section \ref{sec:intro-question-objectives}
+defined in Section \ref{sec:intro-question-objectives}.
 We note however that the benefit of both approaches
 is limited when the dimensionality of the data is low.

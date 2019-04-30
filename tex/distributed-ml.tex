@@ -2,7 +2,8 @@
 \label{ch:bg-parallel-ml}
 
 As the size of the datasets to learn from have grown, so has the need for methods that
-can scale and learn from massive data. With the slowdown of CPU frequency
+can scale and learn from massive data, with billions of data points and millions
+of features. With the slowdown of CPU frequency
 growth, the main avenue for better utilizing modern hardware is to make use
 of parallelism, whether that is in a single-worker, or distributed,
 making use of a cluster of computers to train models. In this chapter we
@@ -20,8 +21,7 @@ system design we refer the reader to \cite{distributed-ml-design}.
 \label{sec:bg-ml-paradigms}
 
 In an abstract representation of any machine learning problem, we can separate
-two functional items: the data, and the model. The data refers to the potentially
-massive set, or stream, of data from which we try to learn, be that a labeled dataset for
+two functional items: the data, and the model. The data refers to the set, or stream, of data from which we try to learn, be that a labeled dataset for
 supervised learning, or an unlabeled dataset from which we try to extract
 structure in unsupervised learning. The model refers to the approximate representation
 of the real-world process that we use to encode the information about the world,
@@ -43,7 +43,7 @@ model of \cite{petuum}.
 
 In our work we employ data-parallel learning for Papers \conceptsicdmNum--\sessionlengthNum,
 model-parallel learning for Papers \uncertaintreesNum and \boostvhtNum, and
-block-parallel learning for \blockgbt. In the sequel we describe and provide
+block-parallel learning for \blockgbt. In the following sections we describe and provide
 examples of each learning approach.
 
 \subsection*{Data-parallel Learning}
@@ -78,10 +78,9 @@ due to the i.i.d. assumption, the same cannot be said for model-parallel algorit
 setting, we parallelize the problem by working on different parts of the \emph{model}
 in parallel, rather than different partitions of data. The motivation is often
 high-dimensional data \cite{parallel-cd-l1}, or
-memory limitations. In order to achieve representations
-that can learn from massive data, some models, like LDA and deep networks, require
+memory limitations. In order to learn complex representations, some models, like LDA and deep networks, require
 models with up to trillions of parameters \cite{lightLDA, large-scale-dl}
-that cannot fit into the memory of one machine or GPU.
+that cannot fit into the memory of one machine or a single Graphics Processing Unit (GPU).
 
 The main challenge becomes
 that, unlike i.i.d. data, the parameters of most models are dependent on each
@@ -101,17 +100,17 @@ to other models, see \citet{model-parallel-learning} for a principled approach
 to the problem.
 Modeling this structure explicitly, Graphlab~\cite{graphlab, graphlab-distributed} presented a learning framework
 where models and data are represented in a graph-like structure that can reside in different
-nodes and updated in parallel, requiring communication only as the graph structure
+workers and updated in parallel, requiring communication only as the graph structure
 indicates. This approach has the limitation however that the models need to be
 possible to be represented in a graph structure, something which is not possible
 for many categories of algorithms.
 
 Finally, we mention approaches that are both data and model parallel. These are
-cases where massive models are needed to be trained over massive datasets, for
+cases where models with trillions of parameters are needed to be trained over datasets with trillions of examples, for
 example in LDA or deep learning models \cite{large-scale-dl, lightLDA}. This kind of
 optimization requires a flexible communication paradigm that allows for efficient
 updates of parts of the model that may reside in different workers, from data
-that are also distributed. The Parameter Server architecture\cite{muPS}
+that are also distributed. The Parameter Server architecture~\cite{muPS}
 allows for such flexible interactions and we describe it in the next
 section that focuses on the different communication patterns used
 in large-scale ML.
@@ -122,9 +121,9 @@ in large-scale ML.
 Initial distributed ML approaches like parallel Stochastic Gradient Descent
 \cite{parallel-sgd} eschewed communication until the very last step of the
 algorithm, however as \citet{dekel-optimal-distributed} show, this comes
-at a cost of the optimality of the solution. \citet{dekel-optimal-distributed}
+at a cost of the optimality of the solution. \citeauthor{dekel-optimal-distributed}
 instead suggest a method that communicates the gradients for each batch and uses
-their average, leading to an asymptotically optimal algorithm for smooth
+their average to update the weights, leading to an asymptotically optimal algorithm for smooth
 convex loss functions. What this example demonstrates is the need for synchronization
 in ML models, which in a distributed setting means communicating model updates
 over the network. In this section we will examine some of the approaches for distributed
@@ -144,9 +143,9 @@ systems like the Message Passing Interface (MPI) protocol \cite{mpi} and the
 GPU-targeted NCCL\footnote{\url{https://github.com/NVIDIA/nccl}}. At the highest
 level, an allreduce operation on a vector of objects will apply an aggregation
 function on the copy of the vector on each worker in a cluster and communicate
-the results between workers, such that at the end of the operation all workers end up with the same,
+the results between workers. At the end of the operation all workers end up with the same,
 aggregated, copy of the vector. Allreduce is a high level operation and as a result there have been
-many different implementations proposed, like the traditional
+many different implementations proposed, like the
 binary tree reduction algorithm, ring reduce, and butterfly reduce~\cite{allreduce}.
 One of the main advantages of the allreduce operation is that it offers developers a simple ``interface'', as the developers only need to provide an aggregation function,
 and all workers share the same role.
@@ -160,14 +159,14 @@ not possible to utilize the sparsity of data when communicating, because the imp
 require that the maximum byte size of the object to be known in advance, which is
 typically \texttt{number of elements $\times$ size of single element}. For sparse
 data where the number of non-zero values can be very small, this can lead to orders
-of magnitude higher communication cost. We demonstrate this issue in the context
+of magnitude higher communication cost than is necessary. We demonstrate this issue in the context
 of distributed Gradient Boosted Tree learning and provide
-a solution in \blockgbt. We note that there exist multiple research
-efforts to make sparse allreduce possible \cite{sparse-comms-ml, sparse-allreduce, sparse-mpi}
+a solution in \blockgbt. We note that multiple research
+efforts exist to make sparse allreduce possible \cite{sparse-comms-ml, sparse-allreduce, sparse-mpi}
 but none that can be considered ready for production.
 
 
-The MapReduce programming paradigm \cite{mapreduce} offered some more flexibility in terms of the
+The MapReduce programming paradigm \cite{mapreduce} offered some flexibility in terms of the
 programming model, in which the base primitives are a map operation that is applied
 locally at each worker on the input, and a reduce operation that aggregates the results
 from workers that correspond to the same key. Developers can assign custom partitioners
@@ -175,36 +174,36 @@ to have more flexible communication, however the aggregation pattern is still ri
 The use of disk-based aggregations for MapReduce are not a good fit for the iterative
 nature of most ML algorithms and often leads to increased runtime~\cite{slow-learners-fast}.
 In-memory data processing systems based on MapReduce-like computation, like Apache Spark \cite{spark}
-suffer from similar issues, although systems like Apache Flink have proposed native iterations
+suffer from similar issues \cite{scalability-cost}, although systems like Apache Flink have proposed native iterations
 in a distributed stream processing system~\cite{flink-iterations}.
 
-A more flexible paradigm is the Parameter Server~\cite{muPS, ps-osdi} (PS). In the PS programming
+A more flexible paradigm is the Parameter Server (PS)~\cite{muPS, ps-osdi}. In the PS programming
 paradigm, machines assume the role of \emph{workers} or \emph{servers}. Workers are
 responsible for the computation of parameter changes, for example by iterating through
-their local partition of the the data to collect gradient updates. Servers are responsible
+their local partition of the data to collect gradient updates. Servers are responsible
 for the storage and update of the parameters.
 Similarly to a distributed key-value store~\cite{dynamo}, the workers in the PS programming
 model have two operations available, \emph{push} that allows them to push a set of
 parameters to the servers, and \emph{pull}, that retrieves a set of parameters.
 These push and pull operations take as input a \emph{key} that transparently determines
 the server that is responsible for that set of parameters, thereby allowing
-one-to-one communication between servers and workers. We note that worker to
-worker communication is not allowed in this paradigm however.
-By allowing the parameters themselves to be
+one-to-one communication between servers and workers. However, worker to
+worker communication is not allowed in this paradigm.
+By allowing the parameters to be
 distributed over a cluster of computers, PS allows for intuitive implementation of
-model-parallel and block-parallel solutions as exemplified in \cite{muPS, lightLDA}.
+model-parallel and block-parallel solutions as shown by \citet{muPS, lightLDA}.
 %The Parameter Server also makes it easier to relax the strict synchronization
 %barriers that allreduce approaches have, for example by allowing different workers
 %to work on different iterations of problem, with a bound on the discrepancy between
 %the fastest and slowest worker that still allows for provable convergence~\cite{stale-sync-ps}.
 
 The flexibility of the PS comes at cost of more complex programming on the developer
-side, compared to an allreduce operation, as the developer needs to provide the
+side, compared to an allreduce operation, as the developer needs to keep track of the
 keys that correspond to the parameters of interest they would like to update or
 retrieve, and do additional housekeeping for the aggregation functions, or broadcasting
 updates to all workers. The PS architecture lends itself very well to cases where updates to the model
 are local, i.e. they only touch small parts of the model. This ensures that the communication
-necessary for the model updates remains small~\cite{muPS}.
+necessary for the model updates remains small.
 
 \section{Distributed Learning Challenges}
 \label{sec:bg-ml-challenges}
@@ -217,13 +216,13 @@ In a shared cluster environment a common issue arising is the existence of ``str
 workers that fall behind in their computation of a particular iteration of an algorithm, causing
 the whole system to stall as other workers have to wait for them to finish. Depending on the reliance
 of the model on a synchronized solution, this can have more or less adverse effects, see
-\cite{straggler-ml} for background on the problem and proposed solutions.
+\citet{straggler-ml} for background on the problem and proposed solutions.
 
-The aforementioned Hogwild optimization \cite{hogwild} and to a larger degree the stale-synchronous
+The Hogwild optimization algorithm \cite{hogwild} and to a larger degree the stale-synchronous
 parameter server (SSP) \cite{stale-sync-ps} were designed to counter-act the effect of stragglers.
-SSP allows for some ``slack'' between the iteration at which different workers can be. In an iterative learning algorithm, this would mean that as workers work through their partition of the data and move
+SSP allows for some slack between the iterations at which different workers can be. In an iterative learning algorithm, this would mean that as workers work through their partition of the data and move
 on to the next iteration, they are allowed to fall behind, with the constraint that the fastest worker is at most
-$s$ iterations ahead of the slowest worker, where $s$ is called the \emph{staleness threshold}.
+$\mathcal{S}$ iterations ahead of the slowest worker, where $\mathcal{S}$ is called the \emph{staleness threshold}.
 Compared to asynchronous solutions like Hogwild, \citet{stale-sync-ps} are able to give stronger convergence
 guarantees for SSP and show how asynchronous algorithms can lead to slow convergence in the presence of stragglers.
 
@@ -231,16 +230,16 @@ Another consideration for the design of distributed learning systems is the
 limited network communication available, a problem attenuated in shared clusters,
 where many applications are competing for resources, and in cloud environments.
 Since network communication is necessary to synchronize the models, creating
-communication-efficient algorithms has attracted significant research recently.
-We refer the reader to \cite{optimization-communication-complexity} for an in-depth
+communication-efficient algorithms has attracted significant research.
+We refer the reader to \citet{optimization-communication-complexity} for an in-depth
 look at the communication costs of distributed optimization algorithms.
 Systems like the parameter server have been developed with the aim of reducing communication \cite{muPS}
 at the systems level,
-while specialized algorithms for optimization like CoCoA \cite{cocoa} focus on local computation
+while specialized algorithms like CoCoA \cite{cocoa} focus on local computation
 in order to reduce the amount of communication necessary. Other approaches include making use
 of information theory and codes to speed up learning \cite{distributed-ml-codes} and gradient
 compression \cite{gradient-compression}.
-In our work on Papers \boostvhtNum and \blockgbtNum,
+In our work in Papers \boostvhtNum and \blockgbtNum,
 we take advantage of data sparsity to create efficient representations
 and reduce the communication cost of distributed boosted tree training by several orders
 of magnitude.

@@ -14,7 +14,7 @@ As machine learning methods mature and become increasingly popular, they are mor
 often being deployed in critical scenarios where mistakes can be costly. Such
 domains include autonomous vehicles, and the medical and financial sector.
 In order for critical decision-making to be done by learning algorithms in these areas, we need
-to have a notion uncertainty in the algorithms' predictions.
+to have a notion of uncertainty in the algorithms' predictions.
 Some of these critical domains also include the requirement that critical decisions
 be made in real-time in a constantly evolving environment, and under a tight computational budget. Examples include the financial domain \cite{streaming-finance} and autonomous vehicles \cite{av-safety}.
 
@@ -32,7 +32,7 @@ regression forests~\cite{meinshausen2006quantile}. The two algorithms are genera
 enable high accuracy \cite{hundreds-classifiers}, are computationally bounded
 and adapt to concept drift through the use of online base learners \cite{fimt},
 and provide uncertainty estimates at an accuracy level equal to or better
-than the state of the art \cite{mondrian-forests-original}, while being an order of magnitude faster to run.
+than the state-of-the-art \cite{mondrian-forests-original}, while being an order of magnitude faster to run.
 
 \section{Uncertainty Estimation for Ensembles of Online Decision Trees}
 \label{sec:uncertain-trees-method}
@@ -40,7 +40,7 @@ than the state of the art \cite{mondrian-forests-original}, while being an order
 In this section we provide an overview of the methods developed for this work.
 We provide a brief description of the batch algorithms that we base our algorithms
 on, and proceed to explain how we make use of approximations to transfer them to
-the online domain. We deal with the regression, and our task is to develop algorithms
+the online domain. We target regression problems, and our task is to develop algorithms
 that exhibit what is called \emph{conservative validity} in conformal prediction literature. This refers
 to algorithms that produce predictive intervals such that the probability of the true value not
 being part of the interval is \emph{less than or equal to} $\alpha$, which is referred
@@ -120,7 +120,7 @@ At prediction time, we use these non-conformity scores to produce the
 intervals: After a regular ensemble prediction is made for the incoming
 instance, we determine the interval boundaries by moving through the
 sorted list of non-conformity scores, and pick the value
-$\phi = \calSet[\floor*{(1 - \significance) \cdot |\calSet|}$ to be half the
+$\phi = \calSet[\floor*{(1 - \significance) \cdot |\calSet|}]$ to be half the
 length of the interval, where $\calSet$ the sorted set of non-conformity scores
 and \significance the requested significance level.
 We call this meta-algorithm CPExact.
@@ -190,7 +190,8 @@ To ease presentation we use two different metrics that
 combine both aspects: the quantile loss \cite{koenker2005qr} and Utility,
 based on the time-utility functions used in real-time systems \cite{tuf2005}.
 Unlike quantile loss, Utility will only penalize methods that go above
-the requested error rate, and as such is a better fit for our task.
+the requested error rate, and as such is a better fit for our conservative
+validity task.
 
 We can see the results in terms of Utility for the small-scale data in Figure \ref{fig:utility-small-mid}
 and for the large-scale drifting datasets in Figure \ref{fig:utility-concept-drift}.
@@ -228,7 +229,7 @@ than Mondrian Forest.
 \begin{figure}
 	\centering
 	\includegraphics[width=0.8\columnwidth]{utility-concept_drift}
-	\caption{Utility for the concept drift data. Higher is better.}
+	\caption{Utility for the concept drift data.}
 	\label{fig:utility-concept-drift}
 \end{figure}
 
